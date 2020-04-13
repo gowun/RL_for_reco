@@ -67,11 +67,6 @@ class Multiple_FMDP_Reco:
         for i in range(self.nEpisode):
             action_matrix[str(i) +'th_policy'] = self.agents[i].draw_action_array(state_list)
 
-        best_policy = []
-        for i in range(len(action_matrix)):
-            frqs = action_matrix.iloc[i].value_counts()
-            zip_frqs = list(filter(lambda x: x[1] == frqs[0], list(zip(frqs.keys(), frqs.values))))
-            best_policy.append(np.random.choice(np.array(zip_frqs).T[0], 1))
-        action_matrix['best_policy'] = best_policy
+        action_matrix['best_policy'] = list(map(lambda x: pd.value_counts(x[1:]).keys()[0], action_matrix.values))
         
         return action_matrix
