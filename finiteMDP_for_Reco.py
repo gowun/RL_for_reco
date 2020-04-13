@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 from itertools import chain
 from mushroom_rl.environments.finite_mdp import FiniteMDP
 from mushroom_rl.algorithms.value import QLearning, DoubleQLearning, WeightedQLearning, SpeedyQLearning, SARSA
@@ -8,11 +9,11 @@ from mushroom_rl.utils.callbacks import CollectDataset, CollectMaxQ
 from mushroom_rl.utils.dataset import parse_dataset
 from mushroom_rl.utils.parameters import ExponentialParameter
 
+ALGORITHM_DICT = {'QL': QLearning, 'DQL': DoubleQLearning, 'WQL': WeightedQLearning, 'SQL': SpeedyQLearning, 'SARSA': SARSA}
 
 class FMDP_Reco:
     def __init__(self, algorithm, exp, P, R):
-        algorithm_dict = {'QL': QLearning, 'DQL': DoubleQLearning, 'WQL': WeightedQLearning, 'SQL': SpeedyQLearning, 'SARSA': SARSA}
-        self.agentAlgorithm = algorithm_dict[algorithm]
+        self.agentAlgorithm = ALGORITHM_DICT[algorithm]
         self.exp = exp
         self.P = P
         self.R = R
@@ -47,3 +48,30 @@ class FMDP_Reco:
             action_arr[current_states.T[0]] = np.array(actions)
 
         return action_arr
+
+
+class Multiple_FMDP_Reco:
+    def __init__(self, nEpisode, nStep, algorithm_list, exp, P, R):
+        self.nEpisode = nEpisode
+        self.nStep = nStep
+        self.agents = []
+        for i in range(self.nEpisode):
+            np.random.seed()
+            self.agents.append(FMDP_Reco(algorithm_list[i], exp, P, R))
+            self.agents[-1].initialise_agent()
+            self.agents[-1].learn_agent(self.nStep)
+
+    def draw_action_matrix(self, state_list):
+        np.random.seed()
+        action_matrix = pd.DataFrame({'current_state': state_list})
+        for i in range(self.nEpisode):
+            action_matrix[str(i) +'th_policy'] = self.agents[i].draw_action_array(state_list)
+
+        best_policy = []
+        for i in range(len(action_matrix)):
+            frqs = action_matrix.iloc[i].value_counts()
+            zip_frqs = list(filter(lambda x: x[1] == frqs[0], list(zip(frqs.keys(), frqs.values))))
+            best_policy.append(np.random.choice(np.array(zip_frqs).T[0], 1))
+        action_matrix['best_policy'] = best_policy
+        
+        return action_matrix
