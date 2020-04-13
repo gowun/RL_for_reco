@@ -11,7 +11,8 @@ from mushroom_rl.utils.parameters import ExponentialParameter
 
 class FMDP_Reco:
     def __init__(self, algorithm, exp, P, R):
-        self.agentAlgorithm = algorithm
+        algorithm_dict = {'QL': QLearning, 'DQL': DoubleQLearning, 'WQL': WeightedQLearning, 'SQL': SpeedyQLearning, 'SARSA': SARSA}
+        self.agentAlgorithm = algorithm_dict[algorithm]
         self.exp = exp
         self.P = P
         self.R = R
