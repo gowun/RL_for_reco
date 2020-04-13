@@ -34,8 +34,8 @@ class FMDP_Reco:
         callbacks = [collect_dataset, collect_max_Q]
         self.core = Core(self.agent, self.env, callbacks)
     
-    def learn_agent(self, n_step, n_episode, initial_states=None):
-        self.core.learn(n_step, n_episode, n_steps_per_fit=1, initial_states=initial_states)
+    def learn_agent(self, n_step):
+        self.core.learn(n_step, n_steps_per_fit=1)
 
     def draw_action_array(self, state_list):
         seq_state_tuples = list(zip(range(len(state_list)), state_list))
