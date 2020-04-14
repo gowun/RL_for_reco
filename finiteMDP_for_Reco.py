@@ -20,15 +20,15 @@ class FMDP_Reco:
         self.env = FiniteMDP(P, R)
         self.agent = None
         self.core = None
-        self.pi = None
+        self.epsilon = None
 
     def initialise_agent(self):
-        epsilon = ExponentialParameter(value=1, exp=0.5, size=self.env.info.observation_space.size)
-        self.pi = EpsGreedy(epsilon=epsilon)
+        self.epsilon = ExponentialParameter(value=1, exp=0.5, size=self.env.info.observation_space.size)
+        pi = EpsGreedy(epsilon=self.epsilon)
 
         learning_rate = ExponentialParameter(value=1, exp=self.exp, size=self.env.info.size)
         algorithm_params = dict(learning_rate=learning_rate)
-        self.agent = self.agentAlgorithm(self.env.info, self.pi, **algorithm_params)
+        self.agent = self.agentAlgorithm(self.env.info, pi, **algorithm_params)
 
         start = self.env.reset()
         collect_max_Q = CollectMaxQ(self.agent.approximator, start)
