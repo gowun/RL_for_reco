@@ -78,10 +78,9 @@ class Multiple_FMDP_Reco:
         if rnd:
             return np.random.choice(action_arr, 1)[0]
         else:
-            dist = pd.value_counts(action_arr)
-            max_v = dist.values()[0]
-            #print(list(zip(dist.keys(), dist.values())))
-            top_actions = list(filter(lambda x: x[1] == max_v, zip(dist.keys(), dist.values())))
+            dist = list(pd.value_counts(action_arr).items())
+            max_v = dist[0][1]
+            top_actions = list(filter(lambda x: x[1] == max_v, dist))
 
             return np.random.choice(np.array(top_actions).T[0], 1)[0]
 
