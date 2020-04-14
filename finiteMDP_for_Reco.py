@@ -71,14 +71,36 @@ class Multiple_FMDP_Reco:
             self.agents.append(FMDP_Reco(algorithm_list[i], exp, P, R))
             self.agents[-1].initialise_agent()
             self.agents[-1].learn_agent(self.nStep)
+        tmp = list(map(lambda x: x.epsilon.get_value(), self.agents))
+        self.mean_epsilons = np.mena(np.array(tmp), axis=1)
+
+    def _find_best_policy(self, action_scale, action_arr, rnd):
+        if rnd:
+            return np.random.choice(action_arr, 1)[0]
+        else:
+            dist = pd.value_counts(action_arr)
+            max_v = dist[0]
+            top_actions = list(filter(lambda x: x[1] == max_v, zip(dist.keys(), dist.values())))
+            return np.random.choice(top_actions, 1)[0]
 
     def draw_action_matrix(self, state_list):
         np.random.seed()
         action_matrix = pd.DataFrame({'current_state': state_list})
         for i in range(self.nEpisode):
             action_matrix[str(i) +'th_policy'] = self.agents[i].draw_action_array(state_list)
+        
+        action_scale = list(range(self.agents[0].P.shape[1]))
+        seq_state_tuples = list(zip(range(len(state_list)), state_list))
+        best_arr = np.array([-1] * len(state_list))
+        for st, ep in enumerate(self.mean_epsilons):
+            current_states = np.array(list(filter(lambda x: x[1] == st, seq_state_tuples)))
+            if len(current_states) > 0:
+                rnd_tf = np.random.choice([0, 1], len(current_states), p=[ep, 1-ep])
+                idxs = current_states.T[0]
+                actions = list(map(lambda x: self._find_best_policy(action_scale, x[0][1:], x[1]), zip(action_matrix.values[idxs], rnd_tf)))
+                best_arr[idxs] = np.array(actions)
 
-        action_matrix['best_policy'] = list(map(lambda x: pd.value_counts(x[1:]).keys()[0], action_matrix.values))
+        action_matrix['best_policy'] = best_arr
         
         return action_matrix
 
