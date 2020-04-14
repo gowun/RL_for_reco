@@ -44,7 +44,7 @@ class FMDP_Reco:
 
         for st in range(self.env.info.observation_space.size[0]):
             current_states = np.array(list(filter(lambda x: x[1] == st, seq_state_tuples)))
-            actions = list(chain(*map(lambda _: self.agent.draw_action(np.array([st])), range(len(current_states)))))
+            actions = list(chain(*map(lambda x: self.agent.draw_action(np.array([st])), range(len(current_states)))))
             action_arr[current_states.T[0]] = np.array(actions)
 
         return action_arr
