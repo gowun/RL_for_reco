@@ -95,7 +95,7 @@ class Multiple_FMDP_Reco:
         for st, ep in enumerate(self.mean_epsilons):
             current_states = np.array(list(filter(lambda x: x[1] == st, seq_state_tuples)))
             if len(current_states) > 0:
-                rnd_tf = np.random.choice([0, 1], len(current_states), p=[ep, 1-ep])
+                rnd_tf = np.random.choice([False, True], len(current_states), p=[ep, 1-ep])
                 idxs = current_states.T[0]
                 actions = list(map(lambda x: self._find_best_policy(action_scale, x[0][1:], x[1]), zip(action_matrix.values[idxs], rnd_tf)))
                 best_arr[idxs] = np.array(actions)
