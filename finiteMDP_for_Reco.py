@@ -23,7 +23,7 @@ class FMDP_Reco:
 
     def initialise_agent(self):
         epsilon = ExponentialParameter(value=1, exp=0.5, size=self.env.info.observation_space.size)
-        pi = EpsGreedy(epsilon=epsilon)
+        self.pi = EpsGreedy(epsilon=epsilon)
 
         learning_rate = ExponentialParameter(value=1, exp=self.exp, size=self.env.info.size)
         algorithm_params = dict(learning_rate=learning_rate)
