@@ -72,7 +72,7 @@ class Multiple_FMDP_Reco:
             self.agents[-1].initialise_agent()
             self.agents[-1].learn_agent(self.nStep)
         tmp = list(map(lambda x: x.epsilon.get_value(), self.agents))
-        self.mean_epsilons = np.mena(np.array(tmp), axis=1)
+        self.mean_epsilons = np.mean(np.array(tmp), axis=1)
 
     def _find_best_policy(self, action_scale, action_arr, rnd):
         if rnd:
