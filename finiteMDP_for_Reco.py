@@ -49,6 +49,15 @@ class FMDP_Reco:
 
         return action_arr
 
+    def get_Qs(self, state_names=None, action_names=None):
+        if state_names is None and action_names is None:
+            s_lst = list(map(lambda x: 's'+str(x), range(self.env.info.observation_space.size[0])))
+            a_lst = list(map(lambda x: 'a'+str(x), range(self.env.info.action_space.size[0])))
+        else:
+            s_lst = state_names
+            a_lst = action_names
+        return pd.DataFrame(self.agent.Q.table, columns=a_lst, index=s_lst)
+
 
 class Multiple_FMDP_Reco:
     def __init__(self, nEpisode, nStep, algorithm_list, exp, P, R):
@@ -70,3 +79,6 @@ class Multiple_FMDP_Reco:
         action_matrix['best_policy'] = list(map(lambda x: pd.value_counts(x[1:]).keys()[0], action_matrix.values))
         
         return action_matrix
+
+    def get_Qs_list(self, state_names=None, action_names=None):
+        return list(map(lambda x: x.get_Qs(state_names, action_names), self.agents))
