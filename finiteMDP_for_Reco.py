@@ -81,7 +81,7 @@ class Multiple_FMDP_Reco:
             dist = pd.value_counts(action_arr)
             max_v = dist[0]
             top_actions = list(filter(lambda x: x[1] == max_v, zip(dist.keys(), dist.values())))
-            print(dist)
+            print(top_actions)
             return np.random.choice(np.array(top_actions).T[0], 1)[0]
 
     def draw_action_matrix(self, state_list):
