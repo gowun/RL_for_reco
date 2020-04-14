@@ -20,6 +20,7 @@ class FMDP_Reco:
         self.env = FiniteMDP(P, R)
         self.agent = None
         self.core = None
+        self.pi = None
 
     def initialise_agent(self):
         epsilon = ExponentialParameter(value=1, exp=0.5, size=self.env.info.observation_space.size)
