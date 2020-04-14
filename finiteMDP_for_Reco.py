@@ -28,7 +28,7 @@ class FMDP_Reco:
 
         learning_rate = ExponentialParameter(value=1, exp=self.exp, size=self.env.info.size)
         algorithm_params = dict(learning_rate=learning_rate)
-        self.agent = self.agentAlgorithm(self.env.info, pi, **algorithm_params)
+        self.agent = self.agentAlgorithm(self.env.info, self.pi, **algorithm_params)
 
         start = self.env.reset()
         collect_max_Q = CollectMaxQ(self.agent.approximator, start)
