@@ -46,7 +46,7 @@ class Fee_no_equip(Environment):
             state_latter = np.random.random_sample(len(self.fb_labels))
             self._state = np.concatenate([[float(state_former)], state_latter])
         else:
-            self._state = state
+            self._state = np.array(state)
 
     def _estimate_current_state(self, model_idx, a):
         idxs = self.knn_model[model_idx]['model'].kneighbors([self._state[1:]], self.knn_model[model_idx]['size'], return_distance=False)[0]
