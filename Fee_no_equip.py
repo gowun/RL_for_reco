@@ -44,6 +44,7 @@ class Fee_no_equip(Environment):
             np.random.seed()
             state_former = np.random.choice(self.ug_labels)
             state_latter = np.random.random_sample(len(self.fb_labels))
+            print(np.concatenate([[float(state_former)], state_latter]))
             self._state = np.concatenate([[float(state_former)], state_latter])
         else:
             self._state = np.array(state)
