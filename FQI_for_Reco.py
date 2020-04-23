@@ -12,7 +12,7 @@ from mushroom_rl.utils.dataset import compute_J
 from RL_for_reco.Fee_no_equip import Fee_no_equip
 ENV = {'FNE': Fee_no_equip}
 
-class FQI_for_Reco
+class FQI_for_Reco:
     def __init__(self, env_name, exp, **kwarg):
         np.random.seed()
 
