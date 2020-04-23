@@ -26,8 +26,8 @@ class Fee_no_equip(Environment):
         #self.score_model = pickle.load(open(score_model_abs_path, 'rb'))  ## multi-classification 
 
         ## ug, scores of fb classes
-        self.min_point = np.zeros(1 + len(self.fb_labels))
-        self.max_point = np.array([float(len(self.ug_labels)-1)] + [1.0] * len(self.fb_labels))
+        self.min_point = np.zeros(len(self.ug_labels) + len(self.fb_labels))
+        self.max_point = np.ones(len(self.ug_labels) + len(self.fb_labels))
 
         self.fee_base = np.array(list(map(lambda x: float(x[3]), self.fb_labels)))
         self.max_reward = 10.0
@@ -42,10 +42,12 @@ class Fee_no_equip(Environment):
     def reset(self, state=None):
         if state is None:
             np.random.seed()
-            state_former = np.random.choice(self.ug_labels)
+            former_idx = np.random.choice(self.ug_labels)
+            state_former = np.zeros(len(self.ug_labels))
+            state_former[former_idx] = 1.0
             state_latter = np.random.random_sample(len(self.fb_labels))
-            print(np.concatenate([[float(state_former)], state_latter]))
-            self._state = np.concatenate([[float(state_former)], state_latter])
+            #print(np.concatenate([[float(state_former)], state_latter]))
+            self._state = np.array(np.concatenate([state_former, state_latter]))
         else:
             self._state = np.array(state)
 
@@ -56,16 +58,16 @@ class Fee_no_equip(Environment):
 
     def step(self, action):
         ### find the most similar case in sas_dataset
-        model_idx = int(self._state[0])
+        model_idx = list(self._state[:len(self.ug_labels)]).index(1.0)
         a = self.fb_labels[action]
         pos_states = self._estimate_current_state(model_idx, a)
         if len(pos_states) > 0:
-            next_state = pos_states[self.next_cols].values[0]
+            next_state = np.array(pos_states[self.next_cols].values[0])
         else:
             for cl in self.ug_model['order'][model_idx]:
                 pos_states = self._estimate_current_state(cl, a)
                 if len(pos_states) > 0:
-                    next_state = pos_states[self.next_cols].values[0]
+                    next_state = np.array(pos_states[self.next_cols].values[0])
                     break
 
         fa = float(a[3])
