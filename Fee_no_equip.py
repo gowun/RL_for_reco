@@ -31,6 +31,7 @@ class Fee_no_equip(Environment):
 
         self.fee_base = np.array(list(map(lambda x: float(x[3]), self.fb_labels)))
         self.max_reward = 10.0
+        self._discrete_actions = list(range(len(self.fb_labels)))
 
         # MDP properties
         observation_space = spaces.Box(low=self.min_point, high=self.max_point)
@@ -42,24 +43,21 @@ class Fee_no_equip(Environment):
     def reset(self, state=None):
         if state is None:
             np.random.seed()
-            former_idx = np.random.choice(self.ug_labels)
-            state_former = np.zeros(len(self.ug_labels))
-            state_former[former_idx] = 1.0
-            state_latter = np.random.random_sample(len(self.fb_labels))
-            #print(np.concatenate([[float(state_former)], state_latter]))
-            self._state = np.array(np.concatenate([state_former, state_latter]))
+            idx = np.random.choice(len(self.sas_dataset))
+            self._state = np.array(self.sas_dataset.values[idx][:len(self.min_point)])
         else:
             self._state = np.array(state)
+        return self._state
 
     def _estimate_current_state(self, model_idx, a):
-        idxs = self.knn_model[model_idx]['model'].kneighbors([self._state[1:]], self.knn_model[model_idx]['size'], return_distance=False)[0]
+        idxs = self.knn_model[model_idx]['model'].kneighbors([self._state[len(self.ug_labels):]], self.knn_model[model_idx]['size'], return_distance=False)[0]
         idxs = list(map(lambda x: self.knn_model[model_idx]['mapping'][x], idxs))
         return self.sas_dataset.iloc[idxs].query(f"rec_{a} > 0.0")
 
     def step(self, action):
         ### find the most similar case in sas_dataset
         model_idx = list(self._state[:len(self.ug_labels)]).index(1.0)
-        a = self.fb_labels[action]
+        a = self.fb_labels[int(action)]
         pos_states = self._estimate_current_state(model_idx, a)
         if len(pos_states) > 0:
             next_state = np.array(pos_states[self.next_cols].values[0])
@@ -79,6 +77,6 @@ class Fee_no_equip(Environment):
         """
         weights = list(map(lambda x: self.max_reward if x == max(self.fee_base) else (max(self.fee_base) + 1 if x >= fa else x - fa), self.fee_base))
         ## -1.8 < reward < 1.9
-        reward = sum(next_state[1:] * np.array(weights)) ** (1/len(self.fb_labels))
+        reward = sum(np.array(next_state[len(self.ug_labels):]) * np.array(weights)) ** 1/len(self.fb_labels)
         
         return next_state, reward, False, {}

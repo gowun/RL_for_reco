@@ -13,12 +13,12 @@ from RL_for_reco.Fee_no_equip import Fee_no_equip
 ENV = {'FNE': Fee_no_equip}
 
 class FQI_for_Reco:
-    def __init__(self, env_name, exp, **kwarg):
+    def __init__(self, env_name, exp, **env_arg):
         np.random.seed()
 
         # MDP
         self.env_name = ENV[env_name]
-        self.env = self.env_name(**kwarg)
+        self.env = self.env_name(**env_arg)
 
         self.exp = exp     ## learning rate for epsilong greedy
         self.agent = None
@@ -31,10 +31,12 @@ class FQI_for_Reco:
 
         # Approximator
         approximator_params = dict(input_shape=self.env.info.observation_space.shape, 
-                                    n_actions=self.env.info.action_space.n,
-                                    n_estimators=50,
-                                    min_samples_split=5,
-                                    min_samples_leaf=3)
+                                   n_actions=self.env.info.action_space.n,
+                                   n_estimators=50,
+                                   min_samples_split=5,
+                                   min_samples_leaf=3,
+                                   max_depth=3,
+                                   n_jobs=-1)
         approximator = ExtraTreesRegressor
         algorithm_params = dict(n_iterations=n_iter)
         self.agent = FQI(self.env.info, pi, approximator, approximator_params=approximator_params, **algorithm_params)
@@ -43,15 +45,17 @@ class FQI_for_Reco:
     def learn_agent(self, n_episodes):
         self.core.learn(n_episodes=n_episodes, n_episodes_per_fit=n_episodes)
 
-    def draw_str_actions(self, states):
+    def draw_actions(self, states):
         actions = list(map(lambda x: self.core.agent.draw_action(np.array([x]))[0], states))
         
         return actions
 
-    def evaluate_given_states(self, test_df):
-        init_states = test_df[self.env.next_cols].values
-
-        dataset = self.core.evaluate(initial_states=init_states)
+    def evaluate_given_info(self, n_episodes=1, test_df=None):
+        if test_df is not None:
+            init_states = test_df[self.env.next_cols].values
+            dataset = self.core.evaluate(initial_states=init_states)
+        else:
+            dataset = self.core.evaluate(n_episodes=n_episodes)
         mean_rewards = np.mean(compute_J(dataset, self.env.info.gamma))
 
         return dataset, mean_rewards
