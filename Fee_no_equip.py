@@ -20,6 +20,7 @@ class Fee_no_equip(Environment):
         state / given action / next state
         """
         self.sas_dataset = pickle.load(open(sas_abs_path, 'rb'))
+        self.current_cols = list(filter(lambda x: x.endswith('_next') == False and x.startswith('rec_') == False, self.sas_dataset.columns))
         self.next_cols = list(filter(lambda x: 'next' in x, self.sas_dataset.columns))
         self.knn_model = pickle.load(open(knn_model_abs_path, 'rb')) ## ug 별로 존재, two components of model and mapping from associate to original indexes
         self.ug_model = pickle.load(open(ug_model_abs_path, 'rb'))  ## clustering
