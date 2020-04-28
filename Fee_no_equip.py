@@ -53,5 +53,6 @@ class Fee_no_equip(Environment):
         action_onehot[action] = True
         next_state = self._find_next_state(action_onehot)
         reward = self._find_reward(action_onehot, next_state)
+        print(next_state, reward)
         
         return next_state, reward, False, {}
