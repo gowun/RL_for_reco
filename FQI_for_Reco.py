@@ -43,7 +43,7 @@ class FQI_for_Reco:
         if len(params) > 0:
             for k, v in params.items():
                 approximator_params[k] = v
-        print(approximator_params)
+        #print(approximator_params)
         algorithm_params = dict(n_iterations=n_iter)
         self.agent = self.algorithm(self.env.info, pi, self.tree, approximator_params=approximator_params, **algorithm_params)
         self.core = Core(self.agent, self.env)
