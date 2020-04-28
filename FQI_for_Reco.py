@@ -1,6 +1,6 @@
 import numpy as np
 import pandas as pd 
-from sklearn.ensemble import ExtraTreesRegressor
+from sklearn.ensemble import ExtraTreesRegressor, RandomForestRegressor
 
 from mushroom_rl.algorithms.value import FQI, DoubleFQI
 from mushroom_rl.core import Core
@@ -13,21 +13,23 @@ from RL_for_reco.Fee_no_equip import Fee_no_equip
 
 ENV = {'FNE': Fee_no_equip}
 ALG = {'FQI': FQI, 'DFQI': DoubleFQI}
+TREE = {'RF': RandomForestRegressor, 'ET': ExtraTreesRegressor}
 
 class FQI_for_Reco:
-    def __init__(self, env_name, alg_name, exp, **env_arg):
+    def __init__(self, env_name, alg_name, tree_name, exp, **env_arg):
         np.random.seed()
 
         # MDP
         self.env_name = ENV[env_name]
         self.env = self.env_name(**env_arg)
 
-        self.exp = exp     ## learning rate for epsilong greedy
+        self.exp = exp     ## learning rate for epsilon greedy
         self.algorithm = ALG[alg_name]
+        self.tree = TREE[tree_name]
         self.agent = None
         self.core = None
 
-    def initialise_all(self, n_iter):
+    def initialise_all(self, n_iter, **params):
         # Policy
         learning_rate = Parameter(value=1.0)
         pi = EpsGreedy(epsilon=learning_rate)   ## the policy followed by the agent
@@ -35,14 +37,14 @@ class FQI_for_Reco:
         # Approximator
         approximator_params = dict(input_shape=self.env.info.observation_space.shape, 
                                    n_actions=self.env.info.action_space.n,
-                                   n_estimators=50,
                                    min_samples_split=5,
                                    min_samples_leaf=3,
-                                   max_depth=3,
                                    n_jobs=-1)
-        approximator = ExtraTreesRegressor
+        if len(params) > 0:
+            for k, v in params.items():
+                approximator_params[k] = v
         algorithm_params = dict(n_iterations=n_iter)
-        self.agent = self.algorithm(self.env.info, pi, approximator, approximator_params=approximator_params, **algorithm_params)
+        self.agent = self.algorithm(self.env.info, pi, self.tree, approximator_params=approximator_params, **algorithm_params)
         self.core = Core(self.agent, self.env)
 
     def learn_agent(self, n_episodes):
