@@ -40,9 +40,9 @@ class Fee_no_equip(Environment):
             self._state = np.array(state)
         return self._state
 
-    def _find_next_state(self, action_onehot, ith_next):
+    def _find_next_state(self, action_onehot):
         s = np.concatenate([self._state, action_onehot])
-        return self.trans_model[ith_next].predict([s])[0]
+        return self.trans_model.predict([s])[0]
         
     def _find_reward(self, action_onehot, next_state):
         s = np.concatenate([self._state, action_onehot, next_state])
@@ -51,7 +51,7 @@ class Fee_no_equip(Environment):
     def step(self, action):
         action_onehot = np.array([False] * len(self.fb_labels))
         action_onehot[action] = True
-        next_state = np.array(list(map(lambda x: self._find_next_state(action_onehot, x), range(self.n_state_dim))))
+        next_state = self._find_next_state(action_onehot)
         reward = self._find_reward(action_onehot, next_state)
         
         return next_state, reward, False, {}
