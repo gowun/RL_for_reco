@@ -47,8 +47,8 @@ class FQI_for_Reco:
         self.agent = self.algorithm(self.env.info, pi, self.tree, approximator_params=approximator_params, **algorithm_params)
         self.core = Core(self.agent, self.env)
 
-    def learn_agent(self, n_episodes):
-        self.core.learn(n_episodes=n_episodes, n_episodes_per_fit=n_episodes)
+    def learn_agent(self, n_episodes, num_fit):
+        self.core.learn(n_episodes=n_episodes, n_episodes_per_fit=num_fit)
 
     def draw_actions(self, states):
         actions = list(map(lambda x: self.core.agent.draw_action(np.array([x]))[0], states))
