@@ -73,21 +73,39 @@ class DQN_Learn:
         self.agent = self.alg_name(**self.agent_params)
         self.core = Core(self.agent, self.env)
 
-    def train(self, n_epochs, n_steps, train_frequency, initial_states):
+    def train(self, n_epochs, n_steps, train_frequency, initial_states, n_samples=10000, compared_rewards=None):
         mean_rewards = []
+        if compared_rewards is not None:
+            raw_rewards = []
         for n in range(n_epochs):
             self.core.learn(n_steps=n_steps, n_steps_per_fit=train_frequency)
-            dataset = self.core.evaluate(initial_states=initial_states)
+            if len(initial_states) > n_samples:
+                idx = np.random.choice(range(len(initial_states)), n_samples, replace=False)
+                samples = initial_states[idx]
+                if compared_rewards is not None:
+                    raw_r = np.mean(np.array(compared_rewards)[idx])
+            else:
+                samples = initial_states
+                if compared_rewards is not None:
+                    raw_r = np.mean(compared_rewards)
+            dataset = self.core.evaluate(initial_states=samples)
             J = compute_J(dataset, 1.0)
-            mean_rewards.append(np.mean(J))
-            print(f'Epoch: {n}, Mean Reward: {mean_rewards[-1]}')
-        return mean_rewards
+            mean_rewards.append(np.mean(J)/self.env.horizon)
+            if compared_rewards is not None:
+                raw_rewards.append(raw_r)
+                print(f'Epoch: {n}, Mean Reward: {mean_rewards[-1]}, Mean Up: {mean_rewards[-1] - raw_r}')
+            else:
+                print(f'Epoch: {n}, Mean Reward: {mean_rewards[-1]}')
+        if compared_rewards is None:
+            return mean_rewards
+        else:
+            return mean_rewards, raw_rewards
 
     def draw_actions(self, states, labeled=True):
         actions = list(map(lambda x: self.agent.draw_action(np.array([x])), np.array(states)))
-        actions = list(chain(*actions))
+        actions = np.array(list(chain(*actions)))
         if labeled:
-            if self.env_name == 'FBR':
-                return np.array(self.env.fb_labels)[np.array(actions)]
+            if self.env_name == FeeBlock_Reco:
+                return np.array(self.env.fb_labels)[actions]
         else:
-            return np.array(actions)
+            return actions
