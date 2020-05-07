@@ -24,9 +24,10 @@ class Network_for_Reco(nn.Module):
         nn.init.xavier_uniform_(self.last_layer.weight, gain=nn.init.calculate_gain('linear'))
 
     def forward(self, state, action=None):
+        features = torch.tensor(state).float()
         for hh in self.fully_connected_net:
-            features = F.relu(hh(torch.squeeze(state, 1).float()))
-        q = self.last_layer(features)
+            features = F.relu(hh(torch.squeeze(torch.tensor(features).float(), 1).float()))
+        q = self.last_layer(torch.tensor(features).float())
 
         if action is None:
             return q

@@ -42,6 +42,7 @@ class DQN_Learn:
         self.alg_params['network'] = Network_for_Reco
         self.alg_params['input_shape'] = self.env.info.observation_space.shape
         self.alg_params['output_shape'] = self.env.info.action_space.size
+        self.alg_params['n_features'] = 
         self.alg_params['n_actions'] = self.env.info.action_space.n
 
         ## Parameters of Agent
@@ -77,12 +78,19 @@ class DQN_Learn:
         mean_rewards = []
         for n in range(n_epochs):
             self.core.learn(n_steps=n_steps, n_steps_per_fit=train_frequency)
+            tmp = []
+            for smp in np.random.choice(initial_states, )
             dataset = self.core.evaluate(initial_states=initial_states)
             J = compute_J(dataset, 1.0)
             mean_rewards.append(np.mean(J))
             print(f'Epoch: {n}, Mean Reward: {mean_rewards[-1]}')
         return mean_rewards
 
-    def draw_actions(self, states):
+    def draw_actions(self, states, labeled=True):
         actions = list(map(lambda x: self.agent.draw_action(np.array([x])), np.array(states)))
-        return list(chain(*actions))
+        actions = list(chain(*actions))
+        if labeled:
+            if self.env_name == 'FBR':
+                return np.array(self.env.fb_labels)[np.array(actions)]
+        else:
+            return np.array(actions)
