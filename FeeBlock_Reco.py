@@ -16,7 +16,9 @@ class FeeBlock_Reco(Environment):
         self.horizon = horizon    ## time limit to long
         self.trans_model = ModelMaker(FlexibleTorchModel, model_path=trans_model_abs_path)
         self.trans_model_params = self.trans_model.model.state_dict()
-        self.state_dim = len(self.trans_model_params['h0.bias']) - self.action_dim
+        tmp = list(self.trans_model_params.keys())
+        key = list(filter(lambda x: '0.bias' in x, tmp))[0]
+        self.state_dim = len(self.trans_model_params[key]) - self.action_dim
 
         MM_VAL = 100
         self.min_point = np.ones(self.state_dim) * -MM_VAL
