@@ -16,7 +16,7 @@ PI_NAMES = {'EG': EpsGreedy, 'TP': TorchPolicy}
 ENV_NAMES = {'FBR': FeeBlock_Reco}
 
 class DQN_Learn:
-    def __init__(self, env_name, pi_name, alg_name, **env_params, **pi_params, **alg_params):
+    def __init__(self, env_name, pi_name, alg_name, env_params={}, pi_params={}, alg_params={}):
         ## MDP
         self.env_name = ENV_NAMES[env_name]
         self.env = self.env_name(**env_params)
