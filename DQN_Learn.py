@@ -1,3 +1,8 @@
+import numpy as np
+import pandas as pd 
+import torch
+from itertools import chain
+
 from mushroom_rl.algorithms.value import DQN, DoubleDQN, AveragedDQN
 from mushroom_rl.core import Core
 from mushroom_rl.environments import *
@@ -5,8 +10,6 @@ from mushroom_rl.policy import EpsGreedy, TorchPolicy
 from mushroom_rl.approximators.parametric.torch_approximator import TorchApproximator
 from mushroom_rl.utils.dataset import compute_J
 from mushroom_rl.utils.parameters import Parameter, LinearParameter
-
-import torch
 
 from RL_for_reco.FeeBlock_Reco import FeeBlock_Reco
 from RL_for_reco.Network_for_Reco import Network_for_Reco
@@ -36,7 +39,7 @@ class DQN_Learn:
         ## Parameters of Network_for_Reco
         self.alg_params = alg_params
         self.alg_params['use_cuda'] = self.cuda_tf
-        self.alg_params['network'] = ALG_NAMES[alg_name]
+        self.alg_params['network'] = Network_for_Reco
         self.alg_params['input_shape'] = self.env.info.observation_space.shape
         self.alg_params['output_shape'] = self.env.info.action_space.size
         self.alg_params['n_actions'] = self.env.info.action_space.n
@@ -77,7 +80,7 @@ class DQN_Learn:
             dataset = self.core.evaluate(initial_states=initial_states)
             J = compute_J(dataset, 1.0)
             mean_rewards.append(np.mean(J))
-            print(f'Epoch: {n}, Mean Reward: {np.mean(J)}')
+            print(f'Epoch: {n}, Mean Reward: {mean_rewards[-1]}')
         return mean_rewards
 
     def draw_actions(self, states):
