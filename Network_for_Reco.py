@@ -17,7 +17,7 @@ class Network_for_Reco(nn.Module):
             hh = nn.Linear(in_features=in_size, out_features=next_size)
             nn.init.xavier_uniform_(hh.weight, gain=nn.init.calculate_gain('relu'))
             in_size = next_size
-            self.__setattr__('_h{i}'.format(i), hh)
+            self.__setattr__(f'_h{i}', hh)
             self.fully_connected_net.append(hh)
 
         self.last_layer = nn.Linear(in_features=in_size, out_features=output_shape[0])
