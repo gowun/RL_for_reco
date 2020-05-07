@@ -7,7 +7,7 @@ import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
 
-class DQN_for_Reco(nn.Module):
+class Network_for_Reco(nn.Module):
     def __init__(self, in_dim, hidden_dims, out_dim, **kwargs):
         super().__init__()
 
