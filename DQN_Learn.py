@@ -73,33 +73,24 @@ class DQN_Learn:
         self.agent = self.alg_name(**self.agent_params)
         self.core = Core(self.agent, self.env)
 
-    def train(self, n_epochs, n_steps, train_frequency, initial_states, n_samples=10000, compared_rewards=None):
-        mean_rewards = []
-        if compared_rewards is not None:
-            raw_rewards = []
-        for n in range(n_epochs):
+    def train(self, n_epochs, n_steps, train_frequency):
+        for _ in range(n_epochs):
             self.core.learn(n_steps=n_steps, n_steps_per_fit=train_frequency)
-            if len(initial_states) > n_samples:
-                idx = np.random.choice(range(len(initial_states)), n_samples, replace=False)
-                samples = initial_states[idx]
-                if compared_rewards is not None:
-                    raw_r = np.mean(np.array(compared_rewards)[idx])
-            else:
-                samples = initial_states
-                if compared_rewards is not None:
-                    raw_r = np.mean(compared_rewards)
-            dataset = self.core.evaluate(initial_states=samples)
-            J = compute_J(dataset, 1.0)
-            mean_rewards.append(np.mean(J)/self.env.horizon)
+
+    def compare_model_with_origin(self, initial_states, compared_rewards, n_samples=10000):
+        if len(initial_states) > n_samples:
+            idx = np.random.choice(range(len(initial_states)), n_samples, replace=False)
+            samples = initial_states[idx]
             if compared_rewards is not None:
-                raw_rewards.append(raw_r)
-                print(f'Epoch: {n}, Mean Reward: {mean_rewards[-1]}, Mean Up: {mean_rewards[-1] - raw_r}')
-            else:
-                print(f'Epoch: {n}, Mean Reward: {mean_rewards[-1]}')
-        if compared_rewards is None:
-            return mean_rewards
+                raw_r = np.mean(np.array(compared_rewards)[idx])
         else:
-            return mean_rewards, raw_rewards
+            samples = initial_states
+            if compared_rewards is not None:
+                raw_r = np.mean(compared_rewards)
+        dataset = self.core.evaluate(initial_states=samples)
+        J = compute_J(dataset, 1.0)
+        learned_r = np.mean(J)/self.env.horizon
+        return learned_r, raw_r, learned_r - raw_r
 
     def draw_actions(self, states, labeled=True):
         actions = list(map(lambda x: self.agent.draw_action(np.array([x])), np.array(states)))
