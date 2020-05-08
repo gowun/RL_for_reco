@@ -99,7 +99,7 @@ class DQN_Learn:
         if len(tmp) > 1:
             for i in ignore:
                 if i in tmp.keys():
-                    del i
+                    del tmp[i]
     
         return list(tmp.keys())[0]        
 
