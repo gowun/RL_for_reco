@@ -93,6 +93,13 @@ class DQN_Learn:
         learned_r = np.mean(J)/self.env.horizon
         return learned_r, raw_r, learned_r - raw_r
 
+    def _find_most_frq(self, lst, ignore=['none']):
+        tmp = pd.value_counts(lst).to_dict()
+        for i in ignore:
+            if i in tmp.keys():
+                del i
+        return list(tmp.keys())[0]        
+
     def draw_actions(self, states, labeled=True):
         actions = list(map(lambda x: self.agent.draw_action(np.array([x])), np.array(states)))
         actions = np.array(list(chain(*actions)))
@@ -101,9 +108,10 @@ class DQN_Learn:
                 str_actions = np.array(self.env.fb_labels)[actions]
                 if 'none' in str_actions:
                     none_idx = np.array(range(len(actions)))[str_actions == 'none']
-                    knn = NearestNeighbors(10).fit(states)
-                    neighbors = list(map(lambda x: knn.kneighbors(states[x], 10, return_distance=False), none_idx))
-                    most_frq = list(map(lambda x: list(pd.value_counts(x).keys())[0], neighbors))
+                    knn = NearestNeighbors(100).fit(states)
+                    neighbors = list(map(lambda x: knn.kneighbors(states[x], 100, return_distance=False), none_idx))
+                    nei_actions = list(map(lambda x: str_actions[x], neighbors))
+                    most_frq = list(map(lambda x: self._find_most_frq(x), nei_actions))
                     str_actions[none_idx] = np.array(most_frq)
 
                 return str_actions
