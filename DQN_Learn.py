@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd 
 import torch
 from itertools import chain
+from sklearn.neighbors import NearestNeighbors
 
 from mushroom_rl.algorithms.value import DQN, DoubleDQN, AveragedDQN
 from mushroom_rl.core import Core
@@ -97,6 +98,14 @@ class DQN_Learn:
         actions = np.array(list(chain(*actions)))
         if labeled:
             if self.env_name == FeeBlock_Reco:
-                return np.array(self.env.fb_labels)[actions]
+                str_actions = np.array(self.env.fb_labels)[actions]
+                if 'none' in str_actions:
+                    none_idx = np.array(range(len(actions)))[str_actions == 'none']
+                    knn = NearestNeighbors(10).fit(states)
+                    neighbors = list(map(lambda x: knn.kneighbors(states[x], 10, return_distance=False), none_idx))
+                    most_frq = list(map(lambda x: list(pd.value_counts(x).keys())[0], neighbors))
+                    str_actions[none_idx] = np.array(most_frq)
+
+                return str_actions
         else:
             return actions
