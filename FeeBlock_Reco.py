@@ -41,7 +41,7 @@ class FeeBlock_Reco(Environment):
         return self._state
 
     def step(self, action):
-        action_onehot = np.zeros(self.action_dim)
+        action_onehot = np.zeros(self.action_dim-1)
         action_onehot[action] = 1.0
         next_state, reward = self.trans_model.infer(np.concatenate([self._state, action_onehot]))
         

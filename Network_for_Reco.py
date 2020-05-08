@@ -10,6 +10,7 @@ import torch.nn.functional as F
 class Network_for_Reco(nn.Module):
     def __init__(self, input_shape, output_shape, hidden_dims, **kwargs):
         super().__init__()
+        self.output_size = output_shape[0]
 
         self.fully_connected_net = []
         in_size = input_shape[-1]
@@ -32,7 +33,6 @@ class Network_for_Reco(nn.Module):
         if action is None:
             return q
         else:
-            action = action.long()
             q_acted = torch.squeeze(q.gather(1, action))
 
             return q_acted
