@@ -34,7 +34,6 @@ class Network_for_Reco(nn.Module):
             return q
         else:
             action = action.long()
-            print(action)
             q_acted = torch.squeeze(q.gather(1, action))
 
             return q_acted
