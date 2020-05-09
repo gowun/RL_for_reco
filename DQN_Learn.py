@@ -7,39 +7,35 @@ from sklearn.neighbors import NearestNeighbors
 from mushroom_rl.algorithms.value import DQN, DoubleDQN, AveragedDQN
 from mushroom_rl.core import Core
 from mushroom_rl.environments import *
-from mushroom_rl.policy import EpsGreedy, TorchPolicy
+from mushroom_rl.policy import EpsGreedy#, TorchPolicy
 from mushroom_rl.approximators.parametric.torch_approximator import TorchApproximator
 from mushroom_rl.utils.dataset import compute_J
-from mushroom_rl.utils.parameters import Parameter, LinearParameter
+from mushroom_rl.utils.parameters import Parameter, LinearParameter, ExponentialParameter, AdaptiveParameter
 
 from RL_for_reco.FeeBlock_Reco import FeeBlock_Reco
 from RL_for_reco.Network_for_Reco import Network_for_Reco
 
 ALG_NAMES = {'DQN': DQN, 'DDQN': DoubleDQN, 'ADQN': AveragedDQN}
-PI_NAMES = {'EG': EpsGreedy, 'TP': TorchPolicy}
+PI_PR_NAMES = {'Basic': Parameter, 'Linear': LinearParameter, 'Exp': ExponentialParameter, 'Adap': AdaptiveParameter}
 ENV_NAMES = {'FBR': FeeBlock_Reco}
 
 class DQN_Learn:
-    def __init__(self, env_name, pi_name, alg_name, env_params={}, pi_params={}, alg_params={}):
+    def __init__(self, env_name, pi_pr_name, alg_name, env_params={}, pi_pr_params={}, alg_params={}):
         ## MDP
         self.env_name = ENV_NAMES[env_name]
         self.env = self.env_name(**env_params)
 
         ## Policy
-        self.pi_name = PI_NAMES[pi_name]
-        self.cuda_tf = True if torch.cuda.is_available() else False
-        if pi_name == 'EG':
-            if len(pi_params) == 1 and list(pi_params.keys()) == ['value']:
-                epsilon = Parameter(**pi_params)
-            else:
-                epsilon = LinearParameter(**pi_params)
-            self.policy = EpsGreedy(epsilon=epsilon)
-        else:
-            self.policy = TorchPolicy(self.cuda_tf)
+        self.pi_pr_name = PI_PR_NAMES[pi_pr_name]
+        self.policy = EpsGreedy(epsilon=self.pi_pr_name(**pi_pr_params))
+        '''
+        Parameter, ExponentialParameter, AdaptiveParameter: only value need
+        LinearParameter: value, threshold_value, n
+        '''
 
         ## Parameters of Network_for_Reco
         self.alg_params = alg_params
-        self.alg_params['use_cuda'] = self.cuda_tf
+        self.alg_params['use_cuda'] = True if torch.cuda.is_available() else Faalse
         self.alg_params['network'] = Network_for_Reco
         self.alg_params['input_shape'] = self.env.info.observation_space.shape
         self.alg_params['output_shape'] = self.env.info.action_space.size
