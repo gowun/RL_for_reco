@@ -27,14 +27,14 @@ class DQN_Learn:
 
         ## Policy
         self.pi_pr_name = PI_PR_NAMES[pi_pr_name]
-        self.policy = EpsGreedy(epsilon=self.pi_pr_name(**pi_pr_params))
+        self.policy = EpsGreedy(epsilon=self.pi_pr_name(**pi_pr_params.copy()))
         '''
         Parameter, ExponentialParameter, AdaptiveParameter: only value need
         LinearParameter: value, threshold_value, n
         '''
 
         ## Parameters of Network_for_Reco
-        self.alg_params = alg_params
+        self.alg_params = alg_params.copy()
         self.alg_params['use_cuda'] = True if torch.cuda.is_available() else False
         self.alg_params['network'] = Network_for_Reco
         self.alg_params['input_shape'] = self.env.info.observation_space.shape
