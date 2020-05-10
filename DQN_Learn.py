@@ -28,7 +28,7 @@ class DQN_Learn:
 
         ## Policy
         self.pi_pr_name = PI_PR_NAMES[pi_pr_name]
-        self.pi_name = pi_name
+        self.pi_name = PI_NAMES[pi_name]
         self.policy = self.pi_name(self.pi_pr_name(**pi_pr_params.copy()))
         '''
         Parameter, ExponentialParameter, AdaptiveParameter: only value need
