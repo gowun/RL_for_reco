@@ -102,7 +102,7 @@ class DQN_Learn:
         return list(tmp.keys())[0]        
 
     def draw_actions(self, states, labeled=True, n_neighbors=100):
-        actions = list(map(lambda x: self.agent.draw_action(np.array([x])), np.array(states)))
+        actions = list(map(lambda x: self.agent.draw_action(np.array(x)), np.array(states)))
         actions = np.array(list(chain(*actions)))
         if labeled:
             if self.env_name == FeeBlock_Reco:
