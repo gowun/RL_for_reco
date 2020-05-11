@@ -8,10 +8,15 @@ from mushroom_rl.utils import spaces
 from RL_for_reco.TorchModel import ModelMaker, FlexibleTorchModel
 
 class FeeBlock_Reco(Environment):
-    def __init__(self, fb_labels, gamma, horizon, trans_model_abs_path):
+    def __init__(self, fb_labels, gamma, horizon, trans_model_abs_path, fb_dist=None):
         # MDP parameters
         self.fb_labels = fb_labels   ## fee block
         self.action_dim = len(self.fb_labels)
+        if fb_dist is None:
+            self.fb_dist = np.zeros(self.action_dim)
+            self.fb_dist[1:] = 1/(self.action_dim-1)
+        else:
+            self.fb_dist = fb_dist
         self.gamma = gamma    ## discount factor
         self.horizon = horizon    ## time limit to long
         self.trans_model = ModelMaker(FlexibleTorchModel, model_path=trans_model_abs_path)
