@@ -16,7 +16,7 @@ from RL_for_reco.FeeBlock_Reco import FeeBlock_Reco
 from RL_for_reco.Network_for_Reco import Network_for_Reco
 
 ALG_NAMES = {'DQN': DQN, 'DDQN': DoubleDQN, 'ADQN': AveragedDQN}
-PI_PR_NAMES = {'Basic': Parameter, 'Linear': LinearParameter, 'Exp': ExponentialParameter}
+PI_PR_NAMES = {'Static': Parameter, 'Linear': LinearParameter, 'Exp': ExponentialParameter}
 PI_NAMES = {'EG': EpsGreedy, 'BTM': Boltzmann}
 ENV_NAMES = {'FBR': FeeBlock_Reco}
 
@@ -30,10 +30,6 @@ class DQN_Learn:
         self.pi_pr_name = PI_PR_NAMES[pi_pr_name]
         self.pi_name = PI_NAMES[pi_name]
         self.policy = self.pi_name(self.pi_pr_name(**pi_pr_params.copy()))
-        '''
-        Parameter, ExponentialParameter, AdaptiveParameter: only value need
-        LinearParameter: value, threshold_value, n
-        '''
 
         ## Parameters of Network_for_Reco
         self.alg_params = alg_params.copy()
