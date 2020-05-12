@@ -99,7 +99,7 @@ class DQN_Learn:
             action_scores = np.zeros(len(action_space))
             for i, a in enumerate(action_space):
                 if a in tmp.keys():
-                    action_space[i] = tmp[a] * action_dist[i]
+                    action_scores[i] = tmp[a] * action_dist[i]
             return action_space[np.argmax(action_scores)]
     
     def draw_actions(self, states, labeled=True, n_neighbors=100):
