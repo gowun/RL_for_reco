@@ -3,6 +3,7 @@ import pandas as pd
 import torch
 from itertools import chain
 from sklearn.neighbors import NearestNeighbors
+from joblib import Parallel, delayed
 
 from mushroom_rl.algorithms.value import DQN, DoubleDQN, AveragedDQN
 from mushroom_rl.core import Core
@@ -102,19 +103,21 @@ class DQN_Learn:
                     action_scores[i] = tmp[a] * action_dist[i]
             return action_space[np.argmax(action_scores)]
     
-    def draw_actions(self, states, labeled=True, n_neighbors=100):
+    def draw_actions(self, states, n_jobs=None, labeled=True, n_neighbors=100):
         actions = list(map(lambda x: self.agent.draw_action(np.array(x)), np.array(states)))
         actions = np.array(list(chain(*actions)))
         if labeled:
             if self.env_name == FeeBlock_Reco:
                 str_actions = np.array(self.env.fb_labels)[actions]
-                print_df = pd.DataFrame([pd.value_counts(str_actions).to_dict()])
+                print_df = pd.DataFrame([pd.value_counts(str_actions).to_dict()], columns=self.env.fb_labels)
                 if 'none' in str_actions:
                     none_idx = np.array(range(len(actions)))[str_actions == 'none']
+                    n_neighbors = min(len(states), n_neighbors)
                     knn = NearestNeighbors(n_neighbors).fit(states)
                     neighbors = knn.kneighbors(states[none_idx], n_neighbors, return_distance=False)
                     nei_actions = list(map(lambda x: str_actions[x], neighbors))
-                    most_frq = list(map(lambda x: self._find_most_frq(x), nei_actions))
+                    most_frq = Parallel(n_jobs=n_jobs)(delayed(self._find_most_frq)(x) for x in nei_actions)
+                    #most_frq = list(map(lambda x: self._find_most_frq(x), nei_actions))
                     str_actions[none_idx] = np.array(most_frq)
                     print_df = pd.concat([print_df, pd.DataFrame([pd.value_counts(str_actions).to_dict()])])
                     print(print_df)
@@ -122,3 +125,9 @@ class DQN_Learn:
                 return str_actions
         else:
             return actions
+
+    def save_agent(self, path):
+        self.agent.save(path)
+
+    def load_agent(self, path):
+        self.agent = self.agent.load(path)
