@@ -104,7 +104,8 @@ class DQN_Learn:
             return action_space[np.argmax(action_scores)]
     
     def draw_actions(self, states, n_jobs=None, labeled=True, n_neighbors=100):
-        actions = list(map(lambda x: self.agent.draw_action(np.array(x)), np.array(states)))
+        actions = Parallel(n_jobs=n_jobs)(delayed(self.agent.draw_action)(x) for x in np.array(states))
+        #actions = list(map(lambda x: self.agent.draw_action(np.array(x)), np.array(states)))
         actions = np.array(list(chain(*actions)))
         if labeled:
             if self.env_name == FeeBlock_Reco:
@@ -113,7 +114,7 @@ class DQN_Learn:
                 if 'none' in str_actions:
                     none_idx = np.array(range(len(actions)))[str_actions == 'none']
                     n_neighbors = min(len(states), n_neighbors)
-                    knn = NearestNeighbors(n_neighbors).fit(states)
+                    knn = NearestNeighbors(n_neighbors, n_jobs=n_jobs).fit(states)
                     neighbors = knn.kneighbors(states[none_idx], n_neighbors, return_distance=False)
                     nei_actions = list(map(lambda x: str_actions[x], neighbors))
                     most_frq = Parallel(n_jobs=n_jobs)(delayed(self._find_most_frq)(x) for x in nei_actions)
