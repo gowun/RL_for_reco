@@ -94,8 +94,11 @@ class DQN_Learn:
             action_space = self.env.fb_labels
             action_dist = self.env.fb_dist
 
-        if len(tmp) == 1 and list(tmp.keys())[0] in ignore:
-            return np.random.choice(action_space, 1, p=action_dist)
+        if len(tmp) == 1:
+            if list(tmp.keys())[0] in ignore:
+                return np.random.choice(action_space, 1, p=action_dist)
+            else:
+                return list(tmp.keys())[0]
         else:
             action_scores = np.zeros(len(action_space))
             for i, a in enumerate(action_space):
