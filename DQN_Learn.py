@@ -104,8 +104,8 @@ class DQN_Learn:
             return action_space[np.argmax(action_scores)]
     
     def draw_actions(self, states, n_jobs=None, labeled=True, n_neighbors=100):
-        actions = Parallel(n_jobs=n_jobs)(delayed(self.agent.draw_action)(x) for x in np.array(states))
-        #actions = list(map(lambda x: self.agent.draw_action(np.array(x)), np.array(states)))
+        #actions = Parallel(n_jobs=n_jobs)(delayed(self.agent.draw_action)(x) for x in np.array(states))
+        actions = list(map(lambda x: self.agent.draw_action(x), np.array(states)))
         actions = np.array(list(chain(*actions)))
         if labeled:
             if self.env_name == FeeBlock_Reco:
