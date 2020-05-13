@@ -6,6 +6,11 @@ from itertools import chain
 from sklearn.metrics import mean_squared_error
 from sklearn.model_selection import train_test_split
 
+'''
+1. !git clone https://github.com/vandit15/Class-balanced-loss-pytorch.git
+2. Change the dir. name to "Class_balanced_loss_pytorch"
+3. Set your home absolute path to read your all package
+'''
 import sys
 sys.path.insert(0, '/home/dmig/work/ds-playground/kennie')
 from Class_balanced_loss_pytorch.class_balanced_loss import CB_loss
