@@ -4,6 +4,11 @@ import numpy as np
 import pandas as pd
 from itertools import chain
 from sklearn.metrics import mean_squared_error
+from sklearn.model_selection import train_test_split
+
+import sys
+sys.path.insert(0, '/home/dmig/work/ds-playground/kennie')
+from Class_balanced_loss_pytorch.class_balanced_loss import CB_loss
 
 import warnings
 warnings.filterwarnings('ignore')
@@ -33,38 +38,59 @@ class AverageMeter(object):
 
 
 class TorchDataCreation:
-    def __init__(self, *data_list):
+    def __init__(self, data_list, long_yn_list=None):
         self.data_list = [np.array(d).astype(float) for d in data_list]
+        self.long_yn_list = long_yn_list
         self.n_data = len(self.data_list)
         self.data_length = len(self.data_list[0])
+        self.test_ratio = None
     
     def split_index(self, test_ratio):
-        self.test_idx = np.random.choice(self.data_length, round(self.data_length*test_ratio), replace=False)
-        self.train_idx = np.array(list(set(range(self.data_length)) - set(self.test_idx)))
+        self.test_ratio = test_ratio
+        if self.long_yn_list is not None and True in self.long_yn_list:
+            y = self.data_list[self.long_yn_list.index(True)]
+            self.train_idx, self.test_idx, _, _ = train_test_split(range(self.data_length), y, test_size=test_ratio)
+        else:
+            self.test_idx = np.random.choice(self.data_length, round(self.data_length*test_ratio), replace=False)
+            self.train_idx = np.array(list(set(range(self.data_length)) - set(self.test_idx)))
     
     def get_dataset(self, idx=None):
         torchdata_list = []
-        for d in self.data_list:
+        for i, d in enumerate(self.data_list):
             if idx is None:
                 tmp = d
             else:
                 tmp = d[idx]
-            torchdata_list.append(torch.Tensor(tmp).float())
+            #torchdata_list.append(torch.Tensor(tmp).float())
+            
+            if self.long_yn_list is None or self.long_yn_list[i] == False:
+                torchdata_list.append(torch.from_numpy(tmp).float())
+            elif self.long_yn_list[i]:
+                torchdata_list.append(torch.LongTensor(tmp).long())
+            
         return TensorDataset(*torchdata_list)
         
     def get_dataloader(self, torchdata, **params):
         return DataLoader(dataset=torchdata, **params)
     
     def make_dataloader(self, **params):
-        self.train_loader = self.get_dataloader(self.get_dataset(self.train_idx), **params)
-        params['shuffle'] = False
-        self.test_loader = self.get_dataloader(self.get_dataset(self.test_idx), **params)
+        if self.test_ratio is None:
+            tr_idx = None
+        else:
+            tr_idx, ts_idx = self.train_idx, self.test_idx
+        self.train_loader = self.get_dataloader(self.get_dataset(tr_idx), **params)
+        if self.test_ratio is not None:
+            params['shuffle'] = False
+            self.test_loader = self.get_dataloader(self.get_dataset(ts_idx), **params)
         
 
 class FlexibleTorchModel(nn.Module):
-    def __init__(self, in_dim, hidden_dims, out_dims, drop_rate=0.0):
+    def __init__(self, in_dim, hidden_dims, out_dims, drop_rate=0.0, out_class_yns=None):
         super(FlexibleTorchModel, self).__init__()
         self.drop_rate = drop_rate
+        self.out_class_yns = out_class_yns
+        self.in_dim = in_dim
+        self.out_dims = out_dims
         
         self.fully_connected_net = []
         in_size = in_dim
@@ -84,8 +110,11 @@ class FlexibleTorchModel(nn.Module):
         for i, fc in enumerate(self.fully_connected_net):
             X = F.dropout(F.relu(fc(X)), p=self.drop_rate)
         outputs = []
-        for last in self.last_layers:
-            outputs.append(last(X))
+        for i, last in enumerate(self.last_layers):
+            if self.out_class_yns is None or self.out_class_yns[i] == False:
+                outputs.append(F.relu(last(X)))
+            elif self.out_class_yns[i]:
+                outputs.append(F.softmax(last(X)))
         
         return outputs
     
@@ -100,6 +129,9 @@ class ModelMaker:
             self.model = self.model_name(**self.model_params).to(self.device)
         else:
             self.load_model(model_path)
+            
+        ## for CB_loss
+        self.focal_params = None
         
     def load_model(self, model_path):
         tmp = pickle.load(open(model_path, 'rb'))
@@ -136,24 +168,33 @@ class ModelMaker:
     def set_optimizer(self, lr_rate, w_decay=1e-8):
         self.optimizer = optim.Adam(self.model.parameters(), lr=lr_rate, weight_decay=w_decay)
         
+    def _focal_loss(self, labels, logits):
+        return CB_loss(labels, logits, **self.focal_params)
+        
     def set_criterions(self, *metrics):
         self.criterions = metrics
     
-    def single_run(self, tensor_datasets, train=False, loss_p=None):
+    def single_run(self, tensor_datasets, train=False, loss_p=None, **focal_params):
         outputs = self.model(tensor_datasets[0])
                 
         losses = []
-        for i, out in enumerate(outputs):
-            if len(self.criterions) == 1:
-                ls = self.criterions[0](out, tensor_datasets[i+1])
+        for i, out in enumerate(outputs): 
+            if self.model.out_class_yns is not None and self.model.out_class_yns[i]:
+                oo = tensor_datasets[i+1].long()
             else:
-                ls = self.criterions[i](out, tensor_datasets[i+1])
+                oo = tensor_datasets[i+1]
+            if self.criterions[i] == 'focal':
+                self.focal_params = focal_params
+                ls = self._focal_loss(oo.cpu(), out.cpu())
+            else:
+                ls = self.criterions[i](oo, out)
             losses.append(ls)
+            
         if loss_p is None:
-            loss = torch.add(*losses)
+            loss = sum(np.array(losses))
         else:
             loss = sum(np.array(losses) * np.array(loss_p))
-    
+        
         if train:
             self.optimizer.zero_grad()
             loss.backward()
@@ -173,7 +214,7 @@ class ModelMaker:
                   'Loss {loss.val:.4f} ({loss.avg:.4f})\t'.format(i + 1, total_iter, 
                                                                   batch_time=batch_time, loss=loss))
 
-    def train(self, loader, epoch, loss_p=None, print_term=None):
+    def train(self, loader, epoch, loss_p=None, print_term=None, **focal_params):
         batch_time = AverageMeter()
         losses = AverageMeter()
         
@@ -185,7 +226,7 @@ class ModelMaker:
         for i, data in enumerate(loader):
             data_tensor = [ts.to(self.device) for ts in data]
             
-            loss = self.single_run(data_tensor, True, loss_p)
+            loss = self.single_run(data_tensor, True, loss_p, **focal_params)
             
             batch_time.update(time.time() - end)
             end = time.time()
@@ -198,7 +239,7 @@ class ModelMaker:
         print('***\t Loss {loss.avg:.4f}'.format(loss=losses))
         
     @torch.no_grad()
-    def validate(self, loader, loss_p=None, print_term=None):
+    def validate(self, loader, loss_p=None, print_term=None, **focal_params):
         batch_time = AverageMeter()
         losses = AverageMeter()
         
@@ -210,7 +251,7 @@ class ModelMaker:
         for i, data in enumerate(loader):
             data_tensor = [ts.to(self.device) for ts in data]
             
-            loss = self.single_run(data_tensor, False, loss_p)
+            loss = self.single_run(data_tensor, False, loss_p, **focal_params)
             
             batch_time.update(time.time() - end)
             end = time.time()
@@ -222,10 +263,10 @@ class ModelMaker:
                 self.print_process(i, total_iter, batch_time, losses, 0, False)
         print('***\t Loss {loss.avg:.4f}'.format(loss=losses))
     
-    def train_validate(self, train_loader, test_loader, total_epoch, loss_p=None, print_term=None):
+    def train_validate(self, train_loader, test_loader, total_epoch, loss_p=None, print_term=None, **focal_params):
         for ep in range(total_epoch):
-            self.train(train_loader, ep, loss_p, print_term)
-            self.validate(test_loader, loss_p, print_term)
+            self.train(train_loader, ep, loss_p, print_term, **focal_params)
+            self.validate(test_loader, loss_p, print_term, **focal_params)
     
     def save_model(self, abs_path):
         pickle.dump([self.model.state_dict(), self.model_params], open(abs_path, 'wb'), 4)
