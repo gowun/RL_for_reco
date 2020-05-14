@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd 
 import pickle 
+import torch.nn as nn
 
 from mushroom_rl.environments import Environment, MDPInfo
 from mushroom_rl.utils import spaces

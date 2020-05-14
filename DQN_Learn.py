@@ -87,24 +87,6 @@ class DQN_Learn:
         J = compute_J(dataset, 1.0)
         learned_r = np.mean(J)/self.env.horizon
         return learned_r, raw_r, learned_r - raw_r
-
-    def _find_most_frq(self, lst, ignore=['none']):
-        tmp = pd.value_counts(lst)
-        if self.env_name == FeeBlock_Reco:
-            action_space = self.env.fb_labels
-            action_dist = self.env.fb_dist
-
-        if len(tmp) == 1:
-            if list(tmp.keys())[0] in ignore:
-                return np.random.choice(action_space, 1, p=action_dist)
-            else:
-                return list(tmp.keys())[0]
-        else:
-            action_scores = np.zeros(len(action_space))
-            for i, a in enumerate(action_space):
-                if a in tmp.keys():
-                    action_scores[i] = tmp[a] * action_dist[i]
-            return action_space[np.argmax(action_scores)]
     
     def draw_actions(self, states, n_jobs=None, labeled=True, n_neighbors=100):
         #actions = Parallel(n_jobs=n_jobs)(delayed(self.agent.draw_action)(x) for x in np.array(states))
@@ -113,20 +95,10 @@ class DQN_Learn:
         if labeled:
             if self.env_name == FeeBlock_Reco:
                 str_actions = np.array(self.env.fb_labels)[actions]
-                print_df = pd.DataFrame([pd.value_counts(str_actions).to_dict()], columns=self.env.fb_labels)
                 if 'none' in str_actions:
-                    none_idx = np.array(range(len(actions)))[str_actions == 'none']
-                    n_neighbors = min(len(states), n_neighbors)
-                    knn = NearestNeighbors(n_neighbors, n_jobs=n_jobs).fit(states)
-                    neighbors = knn.kneighbors(states[none_idx], n_neighbors, return_distance=False)
-                    nei_actions = list(map(lambda x: str_actions[x], neighbors))
-                    most_frq = Parallel(n_jobs=n_jobs)(delayed(self._find_most_frq)(x) for x in nei_actions)
-                    #most_frq = list(map(lambda x: self._find_most_frq(x), nei_actions))
-                    str_actions[none_idx] = np.array(most_frq)
-                    print_df = pd.concat([print_df, pd.DataFrame([pd.value_counts(str_actions).to_dict()])])
-                    print(print_df)
-
-                return str_actions
+                    return approximate_none(states, str_actions, self.env.fb_labels, n_neighbors, n_jobs)
+                else:
+                    return str_actions
         else:
             return actions
 
@@ -135,3 +107,38 @@ class DQN_Learn:
 
     def load_agent(self, path):
         self.agent = self.agent.load(path)
+
+
+def approximate_none(states, str_actions, cols, n_neighbors, n_jobs):
+    print_df = pd.DataFrame([pd.value_counts(str_actions).to_dict()], columns=cols)
+    none_idx = np.array(range(len(str_actions)))[str_actions == 'none']
+    n_neighbors = min(len(states), n_neighbors)
+    knn = NearestNeighbors(n_neighbors, n_jobs=n_jobs).fit(states)
+    neighbors = knn.kneighbors(states[none_idx], n_neighbors, return_distance=False)
+    nei_actions = list(map(lambda x: str_actions[x], neighbors))
+    most_frq = Parallel(n_jobs=n_jobs)(delayed(find_most_frq)(x) for x in nei_actions)
+    #most_frq = list(map(lambda x: self._find_most_frq(x), nei_actions))
+    str_actions[none_idx] = np.array(most_frq)
+    print_df = pd.concat([print_df, pd.DataFrame([pd.value_counts(str_actions).to_dict()])])
+    print(print_df)
+
+    return str_actions
+
+
+def find_most_frq(self, lst, ignore=['none']):
+    tmp = pd.value_counts(lst)
+    if self.env_name == FeeBlock_Reco:
+        action_space = self.env.fb_labels
+        action_dist = self.env.fb_dist
+
+    if len(tmp) == 1:
+        if list(tmp.keys())[0] in ignore:
+            return np.random.choice(action_space, 1, p=action_dist)
+        else:
+            return list(tmp.keys())[0]
+    else:
+        action_scores = np.zeros(len(action_space))
+        for i, a in enumerate(action_space):
+            if a in tmp.keys():
+                action_scores[i] = tmp[a] * action_dist[i]
+        return action_space[np.argmax(action_scores)]
