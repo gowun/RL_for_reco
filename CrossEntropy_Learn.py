@@ -25,7 +25,7 @@ class CrossEntropy_Learn:
         reward = 0.0
         sm = nn.Softmax(dim=1)
         state = self.env.reset()
-        for i in range(n_steps):
+        for _ in range(n_steps):
             action_probs = sm(self.network(torch.FloatTensor([state]))).data.numpy()[0]
             action = np.random.choice(len(self.env.action_dim), p=action_probs)
             #action_onehot = np.zeros(self.env.action_dim)
@@ -66,11 +66,11 @@ class CrossEntropy_Learn:
 
     def train(self, percentile, batch_size, min_step=100, max_step=1000, delta=0.1):
         result = []
-        for i, batch in enumerate(self.generate_random_episode(batch_size, min_step, max_step)):
+        for i, batch in enumerate(self.generate_episode_batch(batch_size, min_step, max_step)):
             obs_v, act_v, rw_b, rw_m = self.filter_batch(batch, percentile)
             self.network.optimizer.zero_grad()
             action_scores = self.network.model(obs_v)
-            loss_v = self.network.criterions[0](action_scores[0], acts_v)
+            loss_v = self.network.criterions[0](action_scores[0], act_v)
             loss_v.backward()
             self.network.optimizer.step()
 
