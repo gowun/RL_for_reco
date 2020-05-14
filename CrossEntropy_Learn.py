@@ -87,7 +87,7 @@ class CrossEntropy_Learn:
         action_probs = self.network.infer(states)[0]
         raw_actions = np.array(self.env.fb_labels)[np.argmax(action_probs, axis=0)]
 
-        if 'none' in w_none_actions:
+        if 'none' in raw_actions:
             return approximate_none(states, raw_actions, self.env.fb_labels, n_neighbors, n_jobs)
         else:
             return raw_actions
