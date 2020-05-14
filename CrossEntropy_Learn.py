@@ -11,7 +11,7 @@ import RL_for_reco.TorchModel as tm
 ENV_NAMES = {'FBR': FeeBlock_Reco}
 
 class CrossEntropy_Learn:
-    def __init__(self, env_name, lr=0.005, **env_params, **net_params):
+    def __init__(self, env_name, lr=0.005, env_params={}, net_params={}):
         self.env_name = ENV_NAMES[env_name]
         self.env = self.env_name(**env_params)
 
