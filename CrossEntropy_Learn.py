@@ -4,8 +4,7 @@ import torch
 import torch.nn as nn
 from itertools import chain
 
-from RL_for_reco.FeeBlock_Reco import FeeBlock_Reco
-from RL_for_reco.DQN_Learn import approximate_none
+from RL_for_reco.FeeBlock_Reco import FeeBlock_Reco, approximate_none
 import RL_for_reco.TorchModel as tm
 
 ENV_NAMES = {'FBR': FeeBlock_Reco}

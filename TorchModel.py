@@ -11,8 +11,10 @@ from sklearn.model_selection import train_test_split
 2. Change the dir. name to "Class_balanced_loss_pytorch"
 3. Set your home absolute path to read your all package
 '''
+import os
 import sys
-sys.path.insert(0, '/home/dmig/work/ds-playground/kennie')
+pck_path = '/'.join(os.popen('pwd').readline().split('/')[:-1])
+sys.path.insert(0, pck_path)
 from Class_balanced_loss_pytorch.class_balanced_loss import CB_loss
 
 import warnings

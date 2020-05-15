@@ -2,6 +2,8 @@ import numpy as np
 import pandas as pd 
 import pickle 
 import torch.nn as nn
+from sklearn.neighbors import NearestNeighbors
+from joblib import Parallel, delayed
 
 from mushroom_rl.environments import Environment, MDPInfo
 from mushroom_rl.utils import spaces
@@ -52,3 +54,40 @@ class FeeBlock_Reco(Environment):
         next_state, reward = self.trans_model.infer(np.concatenate([self._state, action_onehot]))
         
         return next_state, reward, False, {}
+
+
+def approximate_none(states, str_actions, cols, n_neighbors, n_jobs):
+    new_actions = str_actions.copy()
+    print_df = pd.DataFrame([pd.value_counts(str_actions).to_dict()], columns=cols)
+    none_idx = np.array(range(len(str_actions)))[str_actions == 'none']
+    act_idx = np.array(range(len(str_actions)))[str_actions != 'none']
+    n_neighbors = min(len(act_idx), n_neighbors)
+    knn = NearestNeighbors(n_neighbors, n_jobs=n_jobs).fit(states[act_idx])
+    neighbors = knn.kneighbors(states[none_idx], n_neighbors, return_distance=False)
+    nei_actions = list(map(lambda x: str_actions[x], neighbors))
+    most_frq = Parallel(n_jobs=n_jobs)(delayed(find_most_frq)(x) for x in nei_actions)
+    #most_frq = list(map(lambda x: self._find_most_frq(x), nei_actions))
+    new_actions[none_idx] = np.array(most_frq)
+    print_df = pd.concat([print_df, pd.DataFrame([pd.value_counts(str_actions).to_dict()])])
+    print(print_df)
+
+    return new_actions, str_actions
+
+
+def find_most_frq(self, lst, ignore=['none']):
+    tmp = pd.value_counts(lst)
+    if self.env_name == FeeBlock_Reco:
+        action_space = self.env.fb_labels
+        action_dist = self.env.fb_dist
+
+    if len(tmp) == 1:
+        if list(tmp.keys())[0] in ignore:
+            return np.random.choice(action_space, 1, p=action_dist)
+        else:
+            return list(tmp.keys())[0]
+    else:
+        action_scores = np.zeros(len(action_space))
+        for i, a in enumerate(action_space):
+            if a in tmp.keys():
+                action_scores[i] = tmp[a] * action_dist[i]
+        return action_space[np.argmax(action_scores)]

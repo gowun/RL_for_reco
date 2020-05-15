@@ -2,8 +2,6 @@ import numpy as np
 import pandas as pd 
 import torch
 from itertools import chain
-from sklearn.neighbors import NearestNeighbors
-from joblib import Parallel, delayed
 
 from mushroom_rl.algorithms.value import DQN, DoubleDQN, AveragedDQN
 from mushroom_rl.core import Core
@@ -13,7 +11,7 @@ from mushroom_rl.approximators.parametric.torch_approximator import TorchApproxi
 from mushroom_rl.utils.dataset import compute_J
 from mushroom_rl.utils.parameters import Parameter, LinearParameter, ExponentialParameter
 
-from RL_for_reco.FeeBlock_Reco import FeeBlock_Reco
+from RL_for_reco.FeeBlock_Reco import FeeBlock_Reco, approximate_none
 from RL_for_reco.Network_for_Reco import Network_for_Reco
 
 ALG_NAMES = {'DQN': DQN, 'DDQN': DoubleDQN, 'ADQN': AveragedDQN}
@@ -96,7 +94,7 @@ class DQN_Learn:
             if self.env_name == FeeBlock_Reco:
                 str_actions = np.array(self.env.fb_labels)[actions]
                 if 'none' in str_actions:
-                    return approximate_none(states, str_actions, self.env.fb_labels, n_neighbors, n_jobs)
+                    return approximate_none(states, str_actions, self.env.fb_labels, n_neighbors, n_jobs)  ## 2 arrays
                 else:
                     return str_actions
         else:
@@ -107,38 +105,3 @@ class DQN_Learn:
 
     def load_agent(self, path):
         self.agent = self.agent.load(path)
-
-
-def approximate_none(states, str_actions, cols, n_neighbors, n_jobs):
-    print_df = pd.DataFrame([pd.value_counts(str_actions).to_dict()], columns=cols)
-    none_idx = np.array(range(len(str_actions)))[str_actions == 'none']
-    n_neighbors = min(len(states), n_neighbors)
-    knn = NearestNeighbors(n_neighbors, n_jobs=n_jobs).fit(states)
-    neighbors = knn.kneighbors(states[none_idx], n_neighbors, return_distance=False)
-    nei_actions = list(map(lambda x: str_actions[x], neighbors))
-    most_frq = Parallel(n_jobs=n_jobs)(delayed(find_most_frq)(x) for x in nei_actions)
-    #most_frq = list(map(lambda x: self._find_most_frq(x), nei_actions))
-    str_actions[none_idx] = np.array(most_frq)
-    print_df = pd.concat([print_df, pd.DataFrame([pd.value_counts(str_actions).to_dict()])])
-    print(print_df)
-
-    return str_actions
-
-
-def find_most_frq(self, lst, ignore=['none']):
-    tmp = pd.value_counts(lst)
-    if self.env_name == FeeBlock_Reco:
-        action_space = self.env.fb_labels
-        action_dist = self.env.fb_dist
-
-    if len(tmp) == 1:
-        if list(tmp.keys())[0] in ignore:
-            return np.random.choice(action_space, 1, p=action_dist)
-        else:
-            return list(tmp.keys())[0]
-    else:
-        action_scores = np.zeros(len(action_space))
-        for i, a in enumerate(action_space):
-            if a in tmp.keys():
-                action_scores[i] = tmp[a] * action_dist[i]
-        return action_space[np.argmax(action_scores)]
