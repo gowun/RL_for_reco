@@ -78,6 +78,6 @@ def approximate_none(states, str_actions, action_space, action_dist, n_neighbors
 
 def find_most_frq(lst, action_space, action_dist, ignore=['none']):
     tmp = list(map(lambda x: sum(x == np.array(lst)), action_space))
-    action_scores = np.array(tmp) * np.array(action_space)
+    action_scores = np.array(tmp) * np.array(action_dist)
 
     return action_space[np.argmax(action_scores)]
