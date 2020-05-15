@@ -182,7 +182,7 @@ class ModelMaker:
     def set_optimizer(self, lr_rate, w_decay=1e-8):
         self.optimizer = optim.Adam(self.model.parameters(), lr=lr_rate, weight_decay=w_decay)
         
-    def _focal_loss(self, labels, logits):
+    def focal_loss(self, labels, logits):
         return CB_loss(labels, logits, **self.focal_params)
         
     def set_criterions(self, *metrics):
@@ -199,7 +199,7 @@ class ModelMaker:
                 oo = tensor_datasets[i+1]
             if self.criterions[i] == 'focal':
                 self.focal_params = focal_params
-                ls = self._focal_loss(oo.cpu(), out.cpu())
+                ls = self.focal_loss(oo.cpu(), out.cpu())
             else:
                 ls = self.criterions[i](oo, out)
             losses.append(ls)
