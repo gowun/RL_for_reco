@@ -128,6 +128,48 @@ class TorchApproximator_cuda(TorchApproximator):
         else:
             set_weights(self.network.parameters(), weights, self._use_cuda, self.cuda_num)
 
+    def predict(self, *args, output_tensor=False, **kwargs):
+        """
+        Predict.
+        Args:
+            args (list): input;
+            output_tensor (bool, False): whether to return the output as tensor
+                or not;
+            **kwargs (dict): other parameters used by the predict method
+                the regressor.
+        Returns:
+            The predictions of the model.
+        """
+        if not self._use_cuda:
+            torch_args = [torch.from_numpy(x) if isinstance(x, np.ndarray) else x
+                          for x in args]
+            val = self.network.forward(*torch_args, **kwargs)
+
+            if output_tensor:
+                return val
+            elif isinstance(val, tuple):
+                val = tuple([x.detach().numpy() for x in val])
+            else:
+                val = val.detach().numpy()
+        else:
+            if self.cuda_num is None:
+                torch_args = [torch.from_numpy(x).cuda()
+                            if isinstance(x, np.ndarray) else x.cuda() for x in args]
+            else:
+                torch_args = [torch.from_numpy(x).to(torch.device(self.cuda_num))
+                            if isinstance(x, np.ndarray) else x.to(torch.device(self.cuda_num)) for x in args]
+            val = self.network.forward(*torch_args,
+                                       **kwargs)
+
+            if output_tensor:
+                return val
+            elif isinstance(val, tuple):
+                val = tuple([x.detach().cpu().numpy() for x in val])
+            else:
+                val = val.detach().cpu().numpy()
+
+        return val
+
     def diff(self, *args, **kwargs):
         """
         Compute the derivative of the output w.r.t. ``state``, and ``action``
