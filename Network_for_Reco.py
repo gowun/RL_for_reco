@@ -54,7 +54,7 @@ class TorchApproximator_cuda(TorchApproximator):
         self._n_fit_targets = n_fit_targets
         self.cuda_num = None if cuda_num is None else f'cuda: {cuda_num}'
 
-        self.network = network(input_shape, output_shape, use_cuda=use_cuda, dropout=dropout, **params)
+        self.network = network(input_shape, output_shape, **params)
 
         if self._use_cuda:
             if cuda_num is not None:
