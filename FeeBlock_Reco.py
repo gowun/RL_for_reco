@@ -64,7 +64,8 @@ def approximate_none(states, str_actions, action_space, action_dist, n_neighbors
     n_neighbors = min(len(act_idx), n_neighbors)
     knn = NearestNeighbors(n_neighbors, n_jobs=n_jobs).fit(states[act_idx])
     neighbors = knn.kneighbors(states[none_idx], n_neighbors, return_distance=False)
-    nei_actions = list(map(lambda x: str_actions[x], neighbors))
+    act_actions = str_actions[act_idx]
+    nei_actions = list(map(lambda x: act_actions[x], neighbors))
     most_frq = list(map(lambda x: find_most_frq(x, action_space, action_dist), nei_actions))
     #Parallel(n_jobs=n_jobs)(delayed(find_most_frq)(x, action_space, action_dist) for x in nei_actions)
     #list(map(lambda x: find_most_frq(x, action_space, action_dist), nei_actions))
