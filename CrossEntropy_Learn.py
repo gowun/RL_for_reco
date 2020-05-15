@@ -24,7 +24,7 @@ class CrossEntropy_Learn:
         if self.loss_name == 'crossentropy':
             self.network.set_criterions(nn.CrossEntropyLoss())
         elif self.loss_name == 'focal':
-            self.network.set_criterions(self.network.focal_loss())
+            self.network.set_criterions(self.loss_name)
         elif self.loss_name == 'mse':
             self.network.set_criterions(nn.MSELoss())
 
@@ -90,7 +90,7 @@ class CrossEntropy_Learn:
             self.network.optimizer.zero_grad()
             action_scores = self.network.model(data_tensor[0])
             if self.loss_name == 'focal':
-                loss_v = self.network.criterions[0](action_scores[0].cpu(), data_tensor[1].cpu())
+                loss_v = self.network.focal_loss(action_scores[0].cpu(), data_tensor[1].cpu())
             else:
                 loss_v = self.network.criterions[0](action_scores[0], data_tensor[1])
             loss_v.backward()
