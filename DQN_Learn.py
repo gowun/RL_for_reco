@@ -12,7 +12,7 @@ from mushroom_rl.utils.dataset import compute_J
 from mushroom_rl.utils.parameters import Parameter, LinearParameter, ExponentialParameter
 
 from RL_for_reco.FeeBlock_Reco import FeeBlock_Reco, approximate_none
-from RL_for_reco.Network_for_Reco import Network_for_Reco
+from RL_for_reco.Network_for_Reco import Network_for_Reco, TorchApproximator_cuda
 
 ALG_NAMES = {'DQN': DQN, 'DDQN': DoubleDQN, 'ADQN': AveragedDQN}
 PI_PR_NAMES = {'Static': Parameter, 'Linear': LinearParameter, 'Exp': ExponentialParameter}
@@ -33,7 +33,7 @@ class DQN_Learn:
         ## Parameters of Network_for_Reco
         self.alg_params = alg_params.copy()
         self.alg_params['use_cuda'] = True if torch.cuda.is_available() else False
-        self.alg_params['network'] = Network_for_Reco
+        self.alg_params['network'] = FeeBlock_Reco
         self.alg_params['input_shape'] = self.env.info.observation_space.shape
         self.alg_params['output_shape'] = self.env.info.action_space.size
         self.alg_params['n_actions'] = self.env.info.action_space.n
@@ -59,7 +59,7 @@ class DQN_Learn:
                 pass
         self.agent_params['mdp_info'] = self.env.info
         self.agent_params['policy'] = self.policy
-        self.agent_params['approximator'] = TorchApproximator
+        self.agent_params['approximator'] = TorchApproximator_cuda
         self.agent_params['approximator_params'] = self.alg_params
 
         ## Agent and Core

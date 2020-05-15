@@ -7,6 +7,8 @@ import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
 
+from mushroom_rl.approximators.parametric.torch_approximator import TorchApproximator
+
 class Network_for_Reco(nn.Module):
     def __init__(self, input_shape, output_shape, hidden_dims, **kwargs):
         super().__init__()
@@ -37,3 +39,36 @@ class Network_for_Reco(nn.Module):
             q_acted = torch.squeeze(q.gather(1, action))
 
             return q_acted
+
+
+class TorchApproximator_cuda(TorchApproximator):
+    def __init__(self, input_shape, output_shape, network, optimizer=None,
+                 loss=None, batch_size=0, n_fit_targets=1, use_cuda=False,
+                 reinitialize=False, dropout=False, quiet=True, cuda_num=None, **params):
+
+        self._batch_size = batch_size
+        self._reinitialize = reinitialize
+        self._use_cuda = use_cuda
+        self._dropout = dropout
+        self._quiet = quiet
+        self._n_fit_targets = n_fit_targets
+        self.cuda_num = None if cuda_num is None else f'cuda: {cuda_num}'
+
+        self.network = network(input_shape, output_shape, use_cuda=use_cuda, dropout=dropout, **params)
+
+        if self._use_cuda:
+            if cuda_num is not None:
+                self.network.to(torch.device(self.cuda_num))
+                print(f'{self.cuda_num} is launced')
+            else:
+                self.network.cuda()
+        if self._dropout:
+            self.network.eval()
+
+        if optimizer is not None:
+            self._optimizer = optimizer['class'](self.network.parameters(),
+                                                 **optimizer['params'])
+        
+        self._loss = loss
+
+        
