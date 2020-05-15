@@ -94,7 +94,7 @@ class DQN_Learn:
             if self.env_name == FeeBlock_Reco:
                 str_actions = np.array(self.env.fb_labels)[actions]
                 if 'none' in str_actions:
-                    return approximate_none(states, str_actions, self.env.fb_labels, n_neighbors, n_jobs)  ## 2 arrays
+                    return approximate_none(states, str_actions, self.env.fb_labels, self.env.fb_dist, n_neighbors, n_jobs)  ## 2 arrays
                 else:
                     return str_actions
         else:

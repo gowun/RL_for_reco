@@ -87,6 +87,6 @@ class CrossEntropy_Learn:
         raw_actions = np.array(self.env.fb_labels)[np.argmax(action_probs, axis=0)]
 
         if 'none' in raw_actions:
-            return approximate_none(states, raw_actions, self.env.fb_labels, n_neighbors, n_jobs)
+            return approximate_none(states, raw_actions, self.env.fb_labels, self.env.action_dist, n_neighbors, n_jobs)
         else:
             return raw_actions

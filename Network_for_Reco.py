@@ -60,7 +60,7 @@ class TorchApproximator_cuda(TorchApproximator):
         if self._use_cuda:
             if cuda_num is not None:
                 self.network.to(torch.device(self.cuda_num))
-                print(f'{self.cuda_num} is launced')
+                #print(f'{self.cuda_num} is launced')
             else:
                 self.network.cuda()
         if self._dropout:
