@@ -18,7 +18,7 @@ class CrossEntropy_Learn:
         else:
             self.device = torch.device(f'cuda: {cuda_num}')
 
-        self.network = tm.ModelMaker(tm.FlexibleTorchModel, cuda_num, **net_params).to(self.device)
+        self.network = tm.ModelMaker(tm.FlexibleTorchModel, cuda_num, **net_params)
         self.network.set_optimizer(lr)
         self.loss_name = loss_name
         if self.loss_name == 'crossentropy':
