@@ -10,7 +10,7 @@ import RL_for_reco.TorchModel as tm
 ENV_NAMES = {'FBR': FeeBlock_Reco}
 
 class CrossEntropy_Learn:
-    def __init__(self, env_name, cuda_num=None, lr=0.005, env_params={}, net_params={}):
+    def __init__(self, env_name, loss_name, cuda_num=None, lr=0.005, env_params={}, net_params={}):
         self.env_name = ENV_NAMES[env_name]
         self.env = self.env_name(**env_params)
         if cuda_num is None:
@@ -20,7 +20,13 @@ class CrossEntropy_Learn:
 
         self.network = tm.ModelMaker(tm.FlexibleTorchModel, cuda_num, **net_params).to(self.device)
         self.network.set_optimizer(lr)
-        self.network.set_criterions(nn.CrossEntropyLoss())
+        self.loss_name = loss_name
+        if self.loss_name == 'crossentropy':
+            self.network.set_criterions(nn.CrossEntropyLoss())
+        elif self.loss_name == 'focal':
+            self.network.set_criterions(self.network.__focal_loss())
+        elif self.loss_name == 'mse':
+            self.network.set_criterions(nn.MSELoss())
 
     def generate_random_episode(self, n_steps):
         state_long = []
@@ -31,8 +37,12 @@ class CrossEntropy_Learn:
         for _ in range(n_steps):
             action_probs = sm(self.network(torch.FloatTensor([state]))).data.numpy()[0]
             action = np.random.choice(len(self.env.action_dim), p=action_probs)
-            #action_onehot = np.zeros(self.env.action_dim)
-            #action_onehot[action] = 1.0
+            if self.loss_name in ['crossentropy', 'focal']:
+                action_long.append(action)
+            else:
+                action_onehot = np.zeros(self.env.action_dim)
+                action_onehot[action] = 1.0
+                action_long.append(action_onehot)
             state_long.append(state)
             action_long.append(action)
             reward += self.env.step(action)[1]
@@ -63,7 +73,10 @@ class CrossEntropy_Learn:
                 train_act.append(episode[1])
 
         train_obs = torch.FloatTensor(train_obs)
-        train_act = torch.LongTensor(train_act)
+        if self.loss_name in ['crossentropy', 'focal']:
+            train_act = torch.LongTensor(train_act)
+        else:
+            train_act = torch.FloatTensor(train_act)
 
         return train_obs, train_act, reward_bound, reward_mean
 
@@ -76,7 +89,10 @@ class CrossEntropy_Learn:
 
             self.network.optimizer.zero_grad()
             action_scores = self.network.model(data_tensor[0])
-            loss_v = self.network.criterions[0](action_scores[0], data_tensor[1])
+            if self.loss_name == 'focal':
+                loss_v = self.network.criterions[0](action_scores[0].cpu(), data_tensor[1].cpu())
+            else:
+                loss_v = self.network.criterions[0](action_scores[0], data_tensor[1])
             loss_v.backward()
             self.network.optimizer.step()
 
