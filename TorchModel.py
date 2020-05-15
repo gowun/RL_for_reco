@@ -128,8 +128,11 @@ class FlexibleTorchModel(nn.Module):
 
 
 class ModelMaker:
-    def __init__(self, model, model_path=None, **model_params):
-        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    def __init__(self, model, cuda_num=None, model_path=None, **model_params):
+        if cuda_num is None:
+            self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        else:
+            self.device = torch.device(f'cuda: {cuda_num}')
         self.model_name = model
         if model_path is None:
             self.model_params = model_params
@@ -140,10 +143,14 @@ class ModelMaker:
         ## for CB_loss
         self.focal_params = None
         
-    def load_model(self, model_path):
+    def load_model(self, model_path, use_cuda=False):
         tmp = pickle.load(open(model_path, 'rb'))
         self.model_params = tmp[1]
-        self.model = self.model_name(**self.model_params).to('cpu')
+        self.model = self.model_name(**self.model_params)
+        if use_cuda:
+            self.model.to(self.device)
+        else:
+            self.model.to('cpu')
         self.model.load_state_dict(tmp[0])
     
     @torch.no_grad()

@@ -67,8 +67,6 @@ def approximate_none(states, str_actions, action_space, action_dist, n_neighbors
     act_actions = str_actions[act_idx]
     nei_actions = list(map(lambda x: act_actions[x], neighbors))
     most_frq = list(map(lambda x: find_most_frq(x, action_space, action_dist), nei_actions))
-    #Parallel(n_jobs=n_jobs)(delayed(find_most_frq)(x, action_space, action_dist) for x in nei_actions)
-    #list(map(lambda x: find_most_frq(x, action_space, action_dist), nei_actions))
     new_actions[none_idx] = np.array(most_frq)
     print_df = pd.concat([print_df, pd.DataFrame([pd.value_counts(new_actions).to_dict()])])
     print(print_df)

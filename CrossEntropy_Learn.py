@@ -10,11 +10,15 @@ import RL_for_reco.TorchModel as tm
 ENV_NAMES = {'FBR': FeeBlock_Reco}
 
 class CrossEntropy_Learn:
-    def __init__(self, env_name, lr=0.005, env_params={}, net_params={}):
+    def __init__(self, env_name, cuda_num=None, lr=0.005, env_params={}, net_params={}):
         self.env_name = ENV_NAMES[env_name]
         self.env = self.env_name(**env_params)
+        if cuda_num is None:
+            self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        else:
+            self.device = torch.device(f'cuda: {cuda_num}')
 
-        self.network = tm.ModelMaker(tm.FlexibleTorchModel, **net_params)
+        self.network = tm.ModelMaker(tm.FlexibleTorchModel, cuda_num, **net_params).to(self.device)
         self.network.set_optimizer(lr)
         self.network.set_criterions(nn.CrossEntropyLoss())
 
@@ -67,9 +71,12 @@ class CrossEntropy_Learn:
         result = []
         for i, batch in enumerate(self.generate_episode_batch(batch_size, min_step, max_step)):
             obs_v, act_v, rw_b, rw_m = self.filter_batch(batch, percentile)
+
+            data_tensor = [v.to(self.device) for v in [obs_v, act_v]]
+
             self.network.optimizer.zero_grad()
-            action_scores = self.network.model(obs_v)
-            loss_v = self.network.criterions[0](action_scores[0], act_v)
+            action_scores = self.network.model(data_tensor[0])
+            loss_v = self.network.criterions[0](action_scores[0], data_tensor[1])
             loss_v.backward()
             self.network.optimizer.step()
 
@@ -82,7 +89,7 @@ class CrossEntropy_Learn:
         
         return result
     
-    def draw_actions(self, states, n_neighbors=100, n_jobs=8):
+    def draw_actions(self, states, n_neighbors=100, n_jobs=20):
         action_probs = self.network.infer(states)[0]
         raw_actions = np.array(self.env.fb_labels)[np.argmax(action_probs, axis=0)]
 
