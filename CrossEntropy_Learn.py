@@ -35,7 +35,7 @@ class CrossEntropy_Learn:
         sm = nn.Softmax(dim=1)
         state = self.env.reset()
         for _ in range(n_steps):
-            action_probs = sm(self.network(torch.FloatTensor([state]))).data.numpy()[0]
+            action_probs = sm(self.network.model(torch.FloatTensor([state]))).data.numpy()[0]
             action = np.random.choice(len(self.env.action_dim), p=action_probs)
             if self.loss_name in ['crossentropy', 'focal']:
                 action_long.append(action)
