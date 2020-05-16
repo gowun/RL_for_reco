@@ -16,8 +16,11 @@ class FeeBlock_Reco(Environment):
         self.fb_labels = fb_labels   ## fee block
         self.action_dim = len(self.fb_labels)
         if fb_dist is None:
-            self.fb_dist = np.zeros(self.action_dim)
-            self.fb_dist[1:] = 1/(self.action_dim-1)
+            if 'none' in self.fb_labels:
+                self.fb_dist = np.zeros(self.action_dim)
+                self.fb_dist[1:] = 1/(self.action_dim-1)
+            else:
+                self.fb_dist = 1/(self.action_dim)
         else:
             self.fb_dist = fb_dist
         self.gamma = gamma    ## discount factor
@@ -26,7 +29,9 @@ class FeeBlock_Reco(Environment):
         self.trans_model_params = self.trans_model.model.state_dict()
         tmp = list(self.trans_model_params.keys())
         key = list(filter(lambda x: '0.weight' in x, tmp))[0]
-        self.state_dim = self.trans_model_params[key].shape[1] - self.action_dim + 1
+        self.state_dim = self.trans_model_params[key].shape[1] - self.action_dim
+        if 'none' in self.fb_labels:
+            self.state_dim += 1
 
         MM_VAL = 100
         self.min_point = np.ones(self.state_dim) * -MM_VAL
@@ -49,8 +54,13 @@ class FeeBlock_Reco(Environment):
         return self._state
 
     def step(self, action):
-        action_onehot = np.zeros(self.action_dim-1)
-        action_onehot[action-1] = 1.0
+        if 'none' in self.fb_labels:
+            action_onehot = np.zeros(self.action_dim-1)
+            if action > 0:
+                action_onehot[action-1] = 1.0
+        else:
+            action_onehot = np.zeros(self.action_dim)
+            action_onehot[action] = 1.0
         next_state, reward = self.trans_model.infer(np.concatenate([self._state, action_onehot]))
         
         return next_state, reward, False, {}

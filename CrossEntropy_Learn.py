@@ -19,6 +19,7 @@ class CrossEntropy_Learn:
             self.device = torch.device(f'cuda: {cuda_num}')
 
         self.network = tm.ModelMaker(tm.FlexibleTorchModel, cuda_num, **net_params)
+        
         self.network.set_optimizer(lr)
         self.loss_name = loss_name
         if self.loss_name == 'crossentropy':
@@ -35,8 +36,8 @@ class CrossEntropy_Learn:
         sm = nn.Softmax(dim=1)
         state = self.env.reset()
         for _ in range(n_steps):
-            action_probs = sm(self.network.model(torch.FloatTensor([state]))).data.numpy()[0]
-            action = np.random.choice(len(self.env.action_dim), p=action_probs)
+            action_probs = sm(self.network.model(torch.FloatTensor([state]))[0]).data.numpy()[0]
+            action = np.random.choice(self.env.action_dim, p=action_probs)
             if self.loss_name in ['crossentropy', 'focal']:
                 action_long.append(action)
             else:
@@ -71,28 +72,41 @@ class CrossEntropy_Learn:
             if episode[2] >= reward_bound:
                 train_obs.append(episode[0])
                 train_act.append(episode[1])
-
+        print(train_obs)
         train_obs = torch.FloatTensor(train_obs)
+        print(train_obs)
         if self.loss_name in ['crossentropy', 'focal']:
             train_act = torch.LongTensor(train_act)
         else:
             train_act = torch.FloatTensor(train_act)
 
         return train_obs, train_act, reward_bound, reward_mean
+    
+    def generate_filter_episodes(self, percentile, batch_size, min_step=100, max_step=1000):
+        self.network.model.to('cpu')
+        self.network.model.eval()
+        
+        batch = self.generate_episode_batch(batch_size, min_step, max_step)
+        
+        return self.filter_batch(batch, percentile)
 
     def train(self, percentile, batch_size, min_step=100, max_step=1000, delta=0.1):
         result = []
-        for i, batch in enumerate(self.generate_episode_batch(batch_size, min_step, max_step)):
-            obs_v, act_v, rw_b, rw_m = self.filter_batch(batch, percentile)
-
-            data_tensor = [v.to(self.device) for v in [obs_v, act_v]]
-
+        
+        batches = self.generate_filter_episodes(percentile, batch_size, min_step, max_step)
+        
+        self.network.model.to(self.device)
+        self.network.model.train()
+        
+        for i, batch in enumerate(batches):
+            obs_v, act_v, rw_b, rw_m = batch
+            
             self.network.optimizer.zero_grad()
-            action_scores = self.network.model(data_tensor[0])
+            action_scores = self.network.model(obs_v.to(self.device))
             if self.loss_name == 'focal':
-                loss_v = self.network.focal_loss(action_scores[0].cpu(), data_tensor[1].cpu())
+                loss_v = self.network.focal_loss(action_scores[0].cpu(), act_v.cpu())
             else:
-                loss_v = self.network.criterions[0](action_scores[0], data_tensor[1])
+                loss_v = self.network.criterions[0](action_scores[0], act_v.to(self.device))
             loss_v.backward()
             self.network.optimizer.step()
 
