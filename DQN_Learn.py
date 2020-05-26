@@ -11,13 +11,13 @@ from mushroom_rl.approximators.parametric.torch_approximator import TorchApproxi
 from mushroom_rl.utils.dataset import compute_J
 from mushroom_rl.utils.parameters import Parameter, LinearParameter, ExponentialParameter
 
-from RL_for_reco.FeeBlock_Reco import FeeBlock_Reco, approximate_none
+from RL_for_reco.Item_Reco import Item_Reco, approximate_none
 from RL_for_reco.Network_for_Reco import Network_for_Reco, TorchApproximator_cuda
 
 ALG_NAMES = {'DQN': DQN, 'DDQN': DoubleDQN, 'ADQN': AveragedDQN}
 PI_PR_NAMES = {'Static': Parameter, 'Linear': LinearParameter, 'Exp': ExponentialParameter}
 PI_NAMES = {'EG': EpsGreedy, 'BTM': Boltzmann}
-ENV_NAMES = {'FBR': FeeBlock_Reco}
+ENV_NAMES = {'IR': Item_Reco}
 
 class DQN_Learn:
     def __init__(self, env_name, pi_pr_name, pi_name, alg_name, env_params={}, pi_pr_params={}, alg_params={}):
@@ -91,10 +91,10 @@ class DQN_Learn:
         actions = list(map(lambda x: self.agent.draw_action(x), np.array(states)))
         actions = np.array(list(chain(*actions)))
         if labeled:
-            if self.env_name == FeeBlock_Reco:
-                str_actions = np.array(self.env.fb_labels)[actions]
+            if self.env_name == Item_Reco:
+                str_actions = np.array(self.env.items)[actions]
                 if 'none' in str_actions:
-                    return approximate_none(states, str_actions, self.env.fb_labels, self.env.fb_dist, n_neighbors, n_jobs)  ## 2 arrays
+                    return approximate_none(states, str_actions, self.env.items, self.env.item_dist, n_neighbors, n_jobs)  ## 2 arrays
                 else:
                     return str_actions
         else:
