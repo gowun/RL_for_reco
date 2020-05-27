@@ -1,10 +1,12 @@
 # Deep Reinforcement Learning for Business Structured Data
 ---
 
-## FeeBlock_Reco
+## Item_Reco
 ---
 
-A class to recommend customer history-based telecommunication fee products.
+A class to recommend products to customers with their any current information and product-recommended history.
+Class variable items indicates the products as well as their associate promotions, offers such as any recommendation type. 
+If you want to take a case where customers have not recommendation, you can use 'none' to represent the case.
 States, actions and reward are respectively n-dim array, 1-d array and a float number.
 A transition model, state + action => (state, reward), is assumed as a multi-output neural network on TorchModel. 
 
