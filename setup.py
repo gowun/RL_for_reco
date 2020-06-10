@@ -23,6 +23,7 @@ setup(
     packages=[package for package in find_packages()
               if package.startswith('RL_for_reco')],
     zip_safe=False,
+    long_description=open('README.md').read(),
     install_requires=requires_list,
     classifiers=["Programming Language :: Python :: 3",
                  "License :: OSI Approved :: MIT License",
