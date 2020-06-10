@@ -2,6 +2,7 @@ numpy
 pandas
 sklearn
 torch
+itertools
 mushroom_rl
 pickle
 joblib

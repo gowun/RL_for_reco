@@ -1,0 +1,13 @@
+Metadata-Version: 1.1
+Name: RL-for-reco
+Version: 1.0.0
+Summary: A Python toolkit of Deep Reinforcement Learning for Structured Data-Oriented Recommendation.
+Home-page: https://github.com/gowun/RL_for_reco
+Author: Gowun Jeong
+Author-email: gowun.jeong@gmail.com
+License: MIT
+Description: UNKNOWN
+Platform: UNKNOWN
+Classifier: Programming Language :: Python :: 3
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent

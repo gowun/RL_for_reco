@@ -1,0 +1,17 @@
+MANIFEST.in
+README.md
+requirements.txt
+setup.py
+RL_for_reco/CrossEntropy_Learn.py
+RL_for_reco/DQN_Learn.py
+RL_for_reco/Item_Reco.py
+RL_for_reco/Network_for_Reco.py
+RL_for_reco/TorchModel.py
+RL_for_reco/__init__.py
+RL_for_reco/class_balanced_loss.py
+RL_for_reco.egg-info/PKG-INFO
+RL_for_reco.egg-info/SOURCES.txt
+RL_for_reco.egg-info/dependency_links.txt
+RL_for_reco.egg-info/not-zip-safe
+RL_for_reco.egg-info/requires.txt
+RL_for_reco.egg-info/top_level.txt
