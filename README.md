@@ -27,7 +27,7 @@ This is also a general form avaiable to any problem.
 A class to formulate a Deep Q Learning problem(an environment, an agent and its policy and associated parameters) and to learn the agent by a Deep Q Network and its approximator. 
 
 
-## TorchMoel
+## TorchModel
 ---
 
 Several classes to build a neural network by pyTorch.

@@ -86,17 +86,20 @@ class DQN_Learn:
         learned_r = np.mean(J)/self.env.horizon
         return learned_r, raw_r, learned_r - raw_r
     
-    def draw_actions(self, states, n_jobs=None, labeled=True, n_neighbors=100):
+    def draw_actions(self, states, n_jobs=None, labeled=True, n_neighbors=100, on_spark=False):
         #actions = Parallel(n_jobs=n_jobs)(delayed(self.agent.draw_action)(x) for x in np.array(states))
         actions = list(map(lambda x: self.agent.draw_action(x), np.array(states)))
         actions = np.array(list(chain(*actions)))
         if labeled:
             if self.env_name == Item_Reco:
-                str_actions = np.array(self.env.items)[actions]
-                if 'none' in str_actions:
-                    return approximate_none(states, str_actions, self.env.items, self.env.item_dist, n_neighbors, n_jobs)  ## 2 arrays
-                else:
+                str_actions = np.array(self.env.items)[actions] 
+                if on_spark:
                     return str_actions
+                else:
+                    if 'none' in str_actions:
+                        return approximate_none(states, str_actions, self.env.items, self.env.item_dist, n_neighbors, n_jobs)  ## 2 arrays
+                    else:
+                        return str_actions
         else:
             return actions
 
