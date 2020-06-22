@@ -65,7 +65,7 @@ class Item_Reco(Environment):
         
         return next_state, reward, False, {}
 
-
+'''
 def approximate_none(states, str_actions, action_space, action_dist, n_neighbors, n_jobs):
     new_actions = str_actions.copy()
     print_df = pd.DataFrame([pd.value_counts(str_actions).to_dict()], columns=action_space)
@@ -89,3 +89,5 @@ def find_most_frq(lst, action_space, action_dist, ignore=['none']):
     action_scores = np.array(tmp) * np.array(action_dist)
 
     return action_space[np.argmax(action_scores)]
+
+'''

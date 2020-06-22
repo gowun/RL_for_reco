@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd 
 import torch
 from itertools import chain
+from sklearn.tree import RandomForestClassifier
 
 from mushroom_rl.algorithms.value import DQN, DoubleDQN, AveragedDQN
 from mushroom_rl.core import Core
@@ -11,7 +12,7 @@ from mushroom_rl.approximators.parametric.torch_approximator import TorchApproxi
 from mushroom_rl.utils.dataset import compute_J
 from mushroom_rl.utils.parameters import Parameter, LinearParameter, ExponentialParameter
 
-from RL_for_reco.Item_Reco import Item_Reco, approximate_none
+from RL_for_reco.Item_Reco import Item_Reco
 from RL_for_reco.Network_for_Reco import Network_for_Reco, TorchApproximator_cuda
 
 ALG_NAMES = {'DQN': DQN, 'DDQN': DoubleDQN, 'ADQN': AveragedDQN}
@@ -86,20 +87,26 @@ class DQN_Learn:
         learned_r = np.mean(J)/self.env.horizon
         return learned_r, raw_r, learned_r - raw_r
     
-    def draw_actions(self, states, n_jobs=None, labeled=True, n_neighbors=100, on_spark=False):
+    def draw_actions(self, states, none_tree_path, n_jobs=None, labeled=True):
         #actions = Parallel(n_jobs=n_jobs)(delayed(self.agent.draw_action)(x) for x in np.array(states))
         actions = list(map(lambda x: self.agent.draw_action(x), np.array(states)))
         actions = np.array(list(chain(*actions)))
         if labeled:
             if self.env_name == Item_Reco:
                 str_actions = np.array(self.env.items)[actions] 
-                if on_spark:
+                if 'none' in str_actions:
+                    none_idx = np.array(range(len(str_actions)))[str_actions == 'none']
+                    try:
+                        none_tree = pickle.load(open(none_tree_path, 'rb'))
+                    except:
+                        rec_idx = np.array(range(len(str_actions)))[str_actions != 'none']
+                        none_tree = RandomForestClassifier(n_jobs=n_jobs, n_estimators=50, class_weight='balanced', max_features=0.8, max_depth=5, criterion='entropy').fit(np.array(states)[rec_idx], str_actions[rec_idx])
+                        pickle.dump(none_tree, open(none_tree_path, 'wb'), 4)
+                    none_mapped = none_tree.predict(np.array(states)[none_idx])
+                    str_actions[none_idx] = none_mapped
                     return str_actions
                 else:
-                    if 'none' in str_actions:
-                        return approximate_none(states, str_actions, self.env.items, self.env.item_dist, n_neighbors, n_jobs)  ## 2 arrays
-                    else:
-                        return str_actions
+                    return str_actions
         else:
             return actions
 
