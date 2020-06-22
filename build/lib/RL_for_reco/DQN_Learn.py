@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd 
 import torch
 from itertools import chain
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.tree import RandomForestClassifier
 
 from mushroom_rl.algorithms.value import DQN, DoubleDQN, AveragedDQN
 from mushroom_rl.core import Core
