@@ -3,7 +3,6 @@ import pandas as pd
 import torch
 from itertools import chain
 from sklearn.ensemble import RandomForestClassifier
-import pickle
 
 from mushroom_rl.algorithms.value import DQN, DoubleDQN, AveragedDQN
 from mushroom_rl.core import Core
@@ -103,11 +102,8 @@ class DQN_Learn:
                         rec_idx = np.array(range(len(str_actions)))[str_actions != 'none']
                         none_tree = RandomForestClassifier(n_jobs=n_jobs, n_estimators=50, class_weight='balanced', max_features=0.8, max_depth=5, criterion='entropy').fit(np.array(states)[rec_idx], str_actions[rec_idx])
                         pickle.dump(none_tree, open(none_tree_path, 'wb'), 4)
-                    print_df = pd.DataFrame([pd.value_counts(str_actions).to_dict()])
                     none_mapped = none_tree.predict(np.array(states)[none_idx])
                     str_actions[none_idx] = none_mapped
-                    print_df = pd.concat([print_df, pd.DataFrame([pd.value_counts(str_actions).to_dict()])])
-                    print(print_df)
                     return str_actions
                 else:
                     return str_actions
