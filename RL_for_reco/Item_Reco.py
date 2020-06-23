@@ -2,7 +2,8 @@ import numpy as np
 import pandas as pd 
 import pickle 
 import torch.nn as nn
-from sklearn.neighbors import NearestNeighbors
+from itertools import chain
+from sklearn.ensemble import RandomForestClassifier
 from joblib import Parallel, delayed
 
 from mushroom_rl.environments import Environment, MDPInfo
@@ -65,29 +66,27 @@ class Item_Reco(Environment):
         
         return next_state, reward, False, {}
 
-'''
-def approximate_none(states, str_actions, action_space, action_dist, n_neighbors, n_jobs):
-    new_actions = str_actions.copy()
-    print_df = pd.DataFrame([pd.value_counts(str_actions).to_dict()], columns=action_space)
-    none_idx = np.array(range(len(str_actions)))[str_actions == 'none']
-    act_idx = np.array(range(len(str_actions)))[str_actions != 'none']
-    n_neighbors = min(len(act_idx), n_neighbors)
-    knn = NearestNeighbors(n_neighbors, n_jobs=n_jobs).fit(states[act_idx])
-    neighbors = knn.kneighbors(states[none_idx], n_neighbors, return_distance=False)
-    act_actions = str_actions[act_idx]
-    nei_actions = list(map(lambda x: act_actions[x], neighbors))
-    most_frq = list(map(lambda x: find_most_frq(x, action_space, action_dist), nei_actions))
-    new_actions[none_idx] = np.array(most_frq)
-    print_df = pd.concat([print_df, pd.DataFrame([pd.value_counts(new_actions).to_dict()])])
-    print(print_df)
 
-    return new_actions
-
-
-def find_most_frq(lst, action_space, action_dist, ignore=['none']):
-    tmp = list(map(lambda x: sum(x == np.array(lst)), action_space))
-    action_scores = np.array(tmp) * np.array(action_dist)
-
-    return action_space[np.argmax(action_scores)]
-
-'''
+def predict_actions(agent, states, items, none_tree_path, n_jobs=None, labeled=True):
+        actions = list(map(lambda x: agent.draw_action(x), np.array(states)))
+        actions = np.array(list(chain(*actions)))
+        if labeled:
+            str_actions = np.array(items)[actions] 
+            if 'none' in str_actions:
+                none_idx = np.array(range(len(str_actions)))[str_actions == 'none']
+                try:
+                    none_tree = pickle.load(open(none_tree_path, 'rb'))
+                except:
+                    rec_idx = np.array(range(len(str_actions)))[str_actions != 'none']
+                    none_tree = RandomForestClassifier(n_jobs=n_jobs, n_estimators=50, class_weight='balanced', max_features=0.8, max_depth=5, criterion='entropy').fit(np.array(states)[rec_idx], str_actions[rec_idx])
+                    pickle.dump(none_tree, open(none_tree_path, 'wb'), 4)
+                print_df = pd.DataFrame([pd.value_counts(str_actions).to_dict()])
+                none_mapped = none_tree.predict(np.array(states)[none_idx])
+                str_actions[none_idx] = none_mapped
+                print_df = pd.concat([print_df, pd.DataFrame([pd.value_counts(str_actions).to_dict()])])
+                print(print_df)
+                return str_actions
+            else:
+                return str_actions
+        else:
+            return actions

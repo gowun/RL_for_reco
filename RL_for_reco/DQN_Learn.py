@@ -87,35 +87,30 @@ class DQN_Learn:
         J = compute_J(dataset, 1.0)
         learned_r = np.mean(J)/self.env.horizon
         return learned_r, raw_r, learned_r - raw_r
-    
-    def draw_actions(self, states, none_tree_path, n_jobs=None, labeled=True):
+
+
+
+def predict_actions(agent, states, items, none_tree_path, n_jobs=None, labeled=True):
         #actions = Parallel(n_jobs=n_jobs)(delayed(self.agent.draw_action)(x) for x in np.array(states))
-        actions = list(map(lambda x: self.agent.draw_action(x), np.array(states)))
+        actions = list(map(lambda x: agent.draw_action(x), np.array(states)))
         actions = np.array(list(chain(*actions)))
         if labeled:
-            if self.env_name == Item_Reco:
-                str_actions = np.array(self.env.items)[actions] 
-                if 'none' in str_actions:
-                    none_idx = np.array(range(len(str_actions)))[str_actions == 'none']
-                    try:
-                        none_tree = pickle.load(open(none_tree_path, 'rb'))
-                    except:
-                        rec_idx = np.array(range(len(str_actions)))[str_actions != 'none']
-                        none_tree = RandomForestClassifier(n_jobs=n_jobs, n_estimators=50, class_weight='balanced', max_features=0.8, max_depth=5, criterion='entropy').fit(np.array(states)[rec_idx], str_actions[rec_idx])
-                        pickle.dump(none_tree, open(none_tree_path, 'wb'), 4)
-                    print_df = pd.DataFrame([pd.value_counts(str_actions).to_dict()])
-                    none_mapped = none_tree.predict(np.array(states)[none_idx])
-                    str_actions[none_idx] = none_mapped
-                    print_df = pd.concat([print_df, pd.DataFrame([pd.value_counts(str_actions).to_dict()])])
-                    print(print_df)
-                    return str_actions
-                else:
-                    return str_actions
+            str_actions = np.array(items)[actions] 
+            if 'none' in str_actions:
+                none_idx = np.array(range(len(str_actions)))[str_actions == 'none']
+                try:
+                    none_tree = pickle.load(open(none_tree_path, 'rb'))
+                except:
+                    rec_idx = np.array(range(len(str_actions)))[str_actions != 'none']
+                    none_tree = RandomForestClassifier(n_jobs=n_jobs, n_estimators=50, class_weight='balanced', max_features=0.8, max_depth=5, criterion='entropy').fit(np.array(states)[rec_idx], str_actions[rec_idx])
+                    pickle.dump(none_tree, open(none_tree_path, 'wb'), 4)
+                print_df = pd.DataFrame([pd.value_counts(str_actions).to_dict()])
+                none_mapped = none_tree.predict(np.array(states)[none_idx])
+                str_actions[none_idx] = none_mapped
+                print_df = pd.concat([print_df, pd.DataFrame([pd.value_counts(str_actions).to_dict()])])
+                print(print_df)
+                return str_actions
+            else:
+                return str_actions
         else:
             return actions
-
-    def save_agent(self, path):
-        self.agent.save(path)
-
-    def load_agent(self, path):
-        self.agent = self.agent.load(path)
