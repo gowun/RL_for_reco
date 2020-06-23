@@ -67,21 +67,26 @@ class Item_Reco(Environment):
         return next_state, reward, False, {}
 
 
-def predict_actions(agent, states, items, none_tree_path, n_jobs=None, labeled=True):
+def predict_actions(agent, states, items, none_tree, n_jobs=None, labeled=True):
         actions = list(map(lambda x: agent.draw_action(x), np.array(states)))
         actions = np.array(list(chain(*actions)))
         if labeled:
             str_actions = np.array(items)[actions] 
             if 'none' in str_actions:
                 none_idx = np.array(range(len(str_actions)))[str_actions == 'none']
-                try:
-                    none_tree = pickle.load(open(none_tree_path, 'rb'))
-                except:
-                    rec_idx = np.array(range(len(str_actions)))[str_actions != 'none']
-                    none_tree = RandomForestClassifier(n_jobs=n_jobs, n_estimators=50, class_weight='balanced', max_features=0.8, max_depth=5, criterion='entropy').fit(np.array(states)[rec_idx], str_actions[rec_idx])
-                    pickle.dump(none_tree, open(none_tree_path, 'wb'), 4)
+
+                if type(none_tree) == str:
+                    try:
+                        none_tree_md = pickle.load(open(none_tree, 'rb'))
+                    except:
+                        rec_idx = np.array(range(len(str_actions)))[str_actions != 'none']
+                        none_tree_md = RandomForestClassifier(n_jobs=n_jobs, n_estimators=50, class_weight='balanced', max_features=0.8, max_depth=5, criterion='entropy').fit(np.array(states)[rec_idx], str_actions[rec_idx])
+                        pickle.dump(none_tree_md, open(none_tree, 'wb'), 4)
+                else:
+                    none_tree_md = none_tree
+
                 print_df = pd.DataFrame([pd.value_counts(str_actions).to_dict()])
-                none_mapped = none_tree.predict(np.array(states)[none_idx])
+                none_mapped = none_tree_md.predict(np.array(states)[none_idx])
                 str_actions[none_idx] = none_mapped
                 print_df = pd.concat([print_df, pd.DataFrame([pd.value_counts(str_actions).to_dict()])])
                 print(print_df)
