@@ -138,10 +138,11 @@ class ModelMaker:
         self.focal_params = None
         
     def load_model(self, model_dir_path, use_cuda=False):
-        self.model_params = pickle.load(open(f'{model_dir_path}/model_params.pkl'))
+        self.model_params = pickle.load(open(f'{model_dir_path}/model_params.pkl', 'rb'))
         self.model = self.model_name(**self.model_params)
         if not use_cuda:
             self.device = torch.device('cpu')
+        print(self.device)
         self.model.load_state_dict(torch.load(f'{model_dir_path}/state_dict.pkl', map_location=self.device))
         self.model.to(self.device)
     
@@ -278,7 +279,7 @@ class ModelMaker:
         os.system(f'rm -r {dir_path}')
         os.system(f'mkdir {dir_path}')
             
-        pickle.dump(self.model.state_dict(), open(f'{dir_path}/state_dict.pkl', 'wb'), 4)
+        torch.save(self.model.state_dict(), f'{dir_path}/state_dict.pkl')
         pickle.dump(self.model_params, open(f'{dir_path}/model_params.pkl', 'wb'), 4)
         
         if hdfs_dir_path is not None:
