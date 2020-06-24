@@ -1,3 +1,4 @@
+import os
 import pickle
 import time
 import numpy as np
@@ -119,30 +120,30 @@ class FlexibleTorchModel(nn.Module):
 
 
 class ModelMaker:
-    def __init__(self, model, cuda_num=None, model_path=None, **model_params):
+    def __init__(self, model, cuda_num=None, model_dir_path=None, **model_params):
         if cuda_num is None:
             self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        else:
+        elif type(cuda_num) == int:
             self.device = torch.device(f'cuda: {cuda_num}')
+        elif cuda_num == 'cpu':
+            self.device = torch.device('cpu')
         self.model_name = model
-        if model_path is None:
+        if model_dir_path is None:
             self.model_params = model_params
             self.model = self.model_name(**self.model_params).to(self.device)
         else:
-            self.load_model(model_path)
+            self.load_model(model_dir_path)
             
         ## for CB_loss
         self.focal_params = None
         
-    def load_model(self, model_path, use_cuda=False):
-        tmp = pickle.load(open(model_path, 'rb'))
-        self.model_params = tmp[1]
+    def load_model(self, model_dir_path, use_cuda=False):
+        self.model_params = pickle.load(open(f'{model_dir_path}/model_params.pkl'))
         self.model = self.model_name(**self.model_params)
-        if use_cuda:
-            self.model.to(self.device)
-        else:
-            self.model.to('cpu')
-        self.model.load_state_dict(tmp[0])
+        if not use_cuda:
+            self.device = torch.device('cpu')
+        self.model.load_state_dict(torch.load(f'{model_dir_path}/state_dict.pkl', map_location=self.device))
+        self.model.to(self.device)
     
     @torch.no_grad()
     def infer(self, any_data):
@@ -273,6 +274,27 @@ class ModelMaker:
             self.train(train_loader, ep, loss_p, print_term, **focal_params)
             self.validate(test_loader, loss_p, print_term, **focal_params)
     
-    def save_model(self, abs_path):
-        pickle.dump([self.model.state_dict(), self.model_params], open(abs_path, 'wb'), 4)
-        #torch.save(self.model.state_dict(), abs_path)
+    def save_model(self, dir_path, hdfs_dir_path=None):
+        os.system(f'rm -r {dir_path}')
+        os.system(f'mkdir {dir_path}')
+            
+        pickle.dump(self.model.state_dict(), open(f'{dir_path}/state_dict.pkl', 'wb'), 4)
+        pickle.dump(self.model_params, open(f'{dir_path}/model_params.pkl', 'wb'), 4)
+        
+        if hdfs_dir_path is not None:
+            upload_file_to_hdfs(dir_path, hdfs_dir_path)
+
+
+def upload_file_to_hdfs(local_path, hdfs_dir_path):
+    filename = local_path.split('/')[-1]
+    exist = os.popen(f'hdfs dfs -ls {hdfs_dir_path}/{filename}').readlines()
+    if len(exist) > 0:
+        print(exist)
+        if '.' in filename:
+            os.system(f'hdfs dfs -rm {hdfs_dir_path}/{filename}')
+        else:
+            os.system(f'hdfs dfs -rm -r {hdfs_dir_path}/{filename}')
+    
+    os.system(f'hdfs dfs -put {local_path} {hdfs_dir_path}/')
+    
+    return os.popen(f'hdfs dfs -ls {hdfs_dir_path}/{filename}').readlines()

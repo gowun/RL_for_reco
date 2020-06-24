@@ -1,8 +1,6 @@
 import numpy as np
 import pandas as pd 
 import torch
-from itertools import chain
-from sklearn.ensemble import RandomForestClassifier
 import pickle
 
 from mushroom_rl.algorithms.value import DQN, DoubleDQN, AveragedDQN
@@ -34,7 +32,7 @@ class DQN_Learn:
 
         ## Parameters of Network_for_Reco
         self.alg_params = alg_params.copy()
-        self.alg_params['use_cuda'] = True if torch.cuda.is_available() else False
+        #self.alg_params['use_cuda'] = True if torch.cuda.is_available() else False
         self.alg_params['network'] = Network_for_Reco
         self.alg_params['input_shape'] = self.env.info.observation_space.shape
         self.alg_params['output_shape'] = self.env.info.action_space.size
@@ -61,7 +59,7 @@ class DQN_Learn:
                 pass
         self.agent_params['mdp_info'] = self.env.info
         self.agent_params['policy'] = self.policy
-        self.agent_params['approximator'] = TorchApproximator_cuda
+        self.agent_params['approximator'] = TorchApproximator#_cuda
         self.agent_params['approximator_params'] = self.alg_params
 
         ## Agent and Core
@@ -87,30 +85,3 @@ class DQN_Learn:
         J = compute_J(dataset, 1.0)
         learned_r = np.mean(J)/self.env.horizon
         return learned_r, raw_r, learned_r - raw_r
-
-
-
-def predict_actions(agent, states, items, none_tree_path, n_jobs=None, labeled=True):
-        #actions = Parallel(n_jobs=n_jobs)(delayed(self.agent.draw_action)(x) for x in np.array(states))
-        actions = list(map(lambda x: agent.draw_action(x), np.array(states)))
-        actions = np.array(list(chain(*actions)))
-        if labeled:
-            str_actions = np.array(items)[actions] 
-            if 'none' in str_actions:
-                none_idx = np.array(range(len(str_actions)))[str_actions == 'none']
-                try:
-                    none_tree = pickle.load(open(none_tree_path, 'rb'))
-                except:
-                    rec_idx = np.array(range(len(str_actions)))[str_actions != 'none']
-                    none_tree = RandomForestClassifier(n_jobs=n_jobs, n_estimators=50, class_weight='balanced', max_features=0.8, max_depth=5, criterion='entropy').fit(np.array(states)[rec_idx], str_actions[rec_idx])
-                    pickle.dump(none_tree, open(none_tree_path, 'wb'), 4)
-                print_df = pd.DataFrame([pd.value_counts(str_actions).to_dict()])
-                none_mapped = none_tree.predict(np.array(states)[none_idx])
-                str_actions[none_idx] = none_mapped
-                print_df = pd.concat([print_df, pd.DataFrame([pd.value_counts(str_actions).to_dict()])])
-                print(print_df)
-                return str_actions
-            else:
-                return str_actions
-        else:
-            return actions
