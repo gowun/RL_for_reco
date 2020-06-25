@@ -26,7 +26,7 @@ class Item_Reco(Environment):
             self.item_dist = item_dist
         self.gamma = gamma    ## discount factor
         self.horizon = horizon    ## time limit to long
-        self.trans_model = ModelMaker(FlexibleTorchModel, model_path=trans_model_abs_path)
+        self.trans_model = ModelMaker(FlexibleTorchModel, model_dir_path=trans_model_abs_path)
         self.trans_model_params = self.trans_model.model.state_dict()
         tmp = list(self.trans_model_params.keys())
         key = list(filter(lambda x: '0.weight' in x, tmp))[0]
