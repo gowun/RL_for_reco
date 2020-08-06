@@ -12,7 +12,6 @@ air = [
     "scipy>=1.4.1",
     "matplotlib>=3.2.1",
     "mushroom_rl>=1.4.0",
-    "joblib>=0.14.1",
 ]
 
 

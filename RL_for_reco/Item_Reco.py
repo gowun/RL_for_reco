@@ -4,7 +4,6 @@ import pickle
 import torch.nn as nn
 from itertools import chain
 from sklearn.ensemble import RandomForestClassifier
-from joblib import Parallel, delayed
 
 from mushroom_rl.environments import Environment, MDPInfo
 from mushroom_rl.utils import spaces
