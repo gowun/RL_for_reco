@@ -21,7 +21,6 @@ class Item_Reco(Environment):
             self.action_dim = len(self.items)
         else:
             self.action_dim = self.items.shape
-        print(self.action_dim)
         if item_dist is None:
             if len(self.action_dim) == 1:
                 if 'none' in self.items:
