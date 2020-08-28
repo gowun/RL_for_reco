@@ -38,7 +38,7 @@ class DQN_Learn:
         if len(self.env.action_dim) == 1:
             self.alg_params['output_shape'] = self.env.action_dim
         else:
-            self.alg_params['output_shape'] = self.env.action_dim[1]
+            self.alg_params['output_shape'] = self.env.action_dim[0]
         self.alg_params['n_actions'] = self.alg_params['output_shape']
 
         ## Parameters of Agent

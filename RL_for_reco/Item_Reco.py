@@ -38,7 +38,7 @@ class Item_Reco(Environment):
         self.trans_model_params = self.trans_model.model.state_dict()
         tmp = list(self.trans_model_params.keys())
         key = list(filter(lambda x: '0.weight' in x, tmp))[0]
-        self.state_dim = self.trans_model_params[key].shape[1] - self.action_dim[1]
+        self.state_dim = self.trans_model_params[key].shape[1] - self.action_dim[0]
         if 'none' in self.items:
             self.state_dim += 1
 
