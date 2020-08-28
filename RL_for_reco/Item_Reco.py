@@ -22,7 +22,7 @@ class Item_Reco(Environment):
         else:
             self.action_dim = self.items.shape
         if item_dist is None:
-            if len(self.action_dim) == 1:
+            if len(self.items.shape) == 1:
                 if 'none' in self.items:
                     self.item_dist = np.zeros(self.action_dim)
                     self.item_dist[1:] = 1/(self.action_dim-1)
@@ -38,7 +38,7 @@ class Item_Reco(Environment):
         self.trans_model_params = self.trans_model.model.state_dict()
         tmp = list(self.trans_model_params.keys())
         key = list(filter(lambda x: '0.weight' in x, tmp))[0]
-        if len(self.action_dim) == 1:
+        if len(self.items.shape) == 1:
             self.state_dim = self.trans_model_params[key].shape[1] - self.action_dim
             if 'none' in self.items:
                 self.state_dim += 1
@@ -49,14 +49,14 @@ class Item_Reco(Environment):
         self.min_point = np.ones(self.state_dim) * -MM_VAL
         self.max_point = np.ones(self.state_dim) * MM_VAL
         
-        if len(self.action_dim) == 1:
+        if len(self.items.shape) == 1:
             self._discrete_actions = list(range(self.action_dim))
         else:
             self._discrete_actions = None
 
         # MDP properties
         observation_space = spaces.Box(low=self.min_point, high=self.max_point)
-        if len(self.action_dim) == 1:
+        if len(self.items.shape) == 1:
             action_space = spaces.Discrete(self.action_dim)
         else:
             action_space = spaces.Box(low=self.items[0][0], high=self.items[0][1])
@@ -72,7 +72,7 @@ class Item_Reco(Environment):
         return self._state
 
     def step(self, action):
-        if len(self.action_dim) == 1:
+        if len(self.items.shape) == 1:
             if 'none' in self.items:
                 action_onehot = np.zeros(self.action_dim-1)
                 if action > 0:

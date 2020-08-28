@@ -35,7 +35,7 @@ class DQN_Learn:
         #self.alg_params['use_cuda'] = True if torch.cuda.is_available() else False
         self.alg_params['network'] = Network_for_Reco
         self.alg_params['input_shape'] = self.env.info.observation_space.shape
-        if len(self.env.action_dim) == 1:
+        if len(self.env.items.shape) == 1:
             self.alg_params['output_shape'] = self.env.info.action_space.size
         else:
             self.alg_params['output_shape'] = [self.env.action_dim[0]]
