@@ -34,12 +34,12 @@ class DQN_Learn:
         self.alg_params = alg_params.copy()
         #self.alg_params['use_cuda'] = True if torch.cuda.is_available() else False
         self.alg_params['network'] = Network_for_Reco
-        self.alg_params['input_shape'] = self.env.info.observation_space.shape
+        self.alg_params['input_shape'] = self.env.state_dim
         if len(self.env.action_dim) == 1:
-            self.alg_params['output_shape'] = self.env.action_dim
+            self.alg_params['output_shape'] = self.env.info.action_space.size
         else:
-            self.alg_params['output_shape'] = self.env.action_dim[0]
-        self.alg_params['n_actions'] = self.alg_params['output_shape']
+            self.alg_params['output_shape'] = [self.env.action_dim[0]]
+        self.alg_params['n_actions'] = self.alg_params['output_shape'][0]
 
         ## Parameters of Agent
         self.agent_params = {}
