@@ -13,14 +13,23 @@ from RL_for_reco.TorchModel import ModelMaker, FlexibleTorchModel
 class Item_Reco(Environment):
     def __init__(self, items, gamma, horizon, trans_model_abs_path, item_dist=None):
         # MDP parameters
-        self.items = items   ## fee block
-        self.action_dim = len(self.items)
+
+        # 1) discrete actions: list of item names or representing integers
+        # 2) actions on n-dimensional space: list of a pair of min and max values per action
+        self.items = np.array(items)
+        if len(self.items.shape) == 1:
+            self.action_dim = len(self.items)
+        else:
+            self.action_dim = self.items.shape
         if item_dist is None:
-            if 'none' in self.items:
-                self.item_dist = np.zeros(self.action_dim)
-                self.item_dist[1:] = 1/(self.action_dim-1)
+            if len(self.action_dim) == 1:
+                if 'none' in self.items:
+                    self.item_dist = np.zeros(self.action_dim)
+                    self.item_dist[1:] = 1/(self.action_dim-1)
+                else:
+                    self.item_dist = 1/(self.action_dim)
             else:
-                self.item_dist = 1/(self.action_dim)
+                self.item_dist = None
         else:
             self.item_dist = item_dist
         self.gamma = gamma    ## discount factor
@@ -36,12 +45,18 @@ class Item_Reco(Environment):
         MM_VAL = 100
         self.min_point = np.ones(self.state_dim) * -MM_VAL
         self.max_point = np.ones(self.state_dim) * MM_VAL
-
-        self._discrete_actions = list(range(self.action_dim))
+        
+        if len(self.action_dim) == 1:
+            self._discrete_actions = list(range(self.action_dim))
+        else:
+            self._discrete_actions = None
 
         # MDP properties
         observation_space = spaces.Box(low=self.min_point, high=self.max_point)
-        action_space = spaces.Discrete(self.action_dim)
+        if len(self.action_dim) == 1:
+            action_space = spaces.Discrete(self.action_dim)
+        else:
+            action_space = spaces.Box(low=self.items[0][0], high=self.items[0][1])
         mdp_info = MDPInfo(observation_space, action_space, gamma, horizon)
 
         super().__init__(mdp_info)
@@ -54,14 +69,17 @@ class Item_Reco(Environment):
         return self._state
 
     def step(self, action):
-        if 'none' in self.items:
-            action_onehot = np.zeros(self.action_dim-1)
-            if action > 0:
-                action_onehot[action-1] = 1.0
+        if len(self.action_dim) == 1:
+            if 'none' in self.items:
+                action_onehot = np.zeros(self.action_dim-1)
+                if action > 0:
+                    action_onehot[action-1] = 1.0
+            else:
+                action_onehot = np.zeros(self.action_dim)
+                action_onehot[action] = 1.0
+            next_state, reward = self.trans_model.infer(np.concatenate([self._state, action_onehot]))
         else:
-            action_onehot = np.zeros(self.action_dim)
-            action_onehot[action] = 1.0
-        next_state, reward = self.trans_model.infer(np.concatenate([self._state, action_onehot]))
+            next_state, reward = self.trans_model.infer(np.concatenate([self._state, action]))
         
         return next_state, reward, False, {}
 
