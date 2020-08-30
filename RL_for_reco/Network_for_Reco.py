@@ -11,8 +11,13 @@ from mushroom_rl.approximators.parametric.torch_approximator import TorchApproxi
 from mushroom_rl.utils.torch import zero_grad
 
 class Network_for_Reco(nn.Module):
-    def __init__(self, input_shape, output_shape, hidden_dims, **kwargs):
+    def __init__(self, input_shape, output_shape, hidden_dims, mode='q', **kwargs):
         super().__init__()
+        # mode = 'q': q-value network
+        # mode = 'actor': actor network
+        # mode = 'critic': critic network
+        self.mode = mode
+
         self.output_size = output_shape[0]
 
         self.fully_connected_net = []
@@ -28,18 +33,30 @@ class Network_for_Reco(nn.Module):
         nn.init.xavier_uniform_(self.last_layer.weight, gain=nn.init.calculate_gain('linear'))
 
     def forward(self, state, action=None):
-        features = torch.tensor(state).float()
-        for hh in self.fully_connected_net:
-            features = F.relu(hh(torch.squeeze(torch.tensor(features).float(), 1).float()))
-        q = self.last_layer(torch.tensor(features).float())
+        if self.mode in ['q', 'actor']:
+            features = torch.tensor(state).float()
+            for hh in self.fully_connected_net:
+                features = F.relu(hh(torch.squeeze(torch.tensor(features).float(), 1).float()))
+            q = self.last_layer(torch.tensor(features).float())
 
-        if action is None:
-            return q
-        else:
-            action = action.long()
-            q_acted = torch.squeeze(q.gather(1, action))
+            if self.mode == 'q':
+                if action is None:
+                    return q
+                else:
+                    action = action.long()
+                    q_acted = torch.squeeze(q.gather(1, action))
 
-            return q_acted
+                    return q_acted
+            elif self.mode == 'actor':
+                return q
+        elif self.mode == 'critic' and action is not None:
+            state_action = torch.cat((state.float(), action.float()), dim=1)
+            for hh in self.fully_connected_net:
+                state_action = F.relu(hh(state_action))
+            q = self.last_layer(state_action)
+
+            return torch.squeeze(q)
+
 
 
 class TorchApproximator_cuda(TorchApproximator):
