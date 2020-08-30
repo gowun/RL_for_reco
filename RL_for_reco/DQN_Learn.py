@@ -84,6 +84,8 @@ class DQN_Learn:
         alg_params:
             ## params for Network_for_Reco
             hidden_dims, list/array of hidden unit sizes
+            optimizer, dict, parameters to specify the optimizer algorithm
+            loss, the loss function
 
             ### params for agent algorithms for DQN
             alg_name in ['DQN', 'DDQN', 'ADQN']
@@ -97,8 +99,7 @@ class DQN_Learn:
                 clip_reward(default=True), whether to clip the reward or not
 
             ### params for agent of actor-critic
-            alg_name in ['A2C', 'PPO', 'DDPG', 'TD3', 'TRPO', 'SAC']
-                actor_optimizer, dict, parameters to specify the actor optimizer algorithm
+            alg_name in ['A2C', 'PPO', 'DDPG', 'TD3', 'SAC']
                 alg_name='A2C'
                     ent_coeff(default=0.0), coefficient for the entropy penalty
                     max_grad_norm(default=None), maximum norm for gradient clipping; 
@@ -108,14 +109,6 @@ class DQN_Learn:
                     batch_size, size of minibatches for every optimization step
                     eps_ppo, value for probability ratio clipping
                     lam(default=1.), lambda coefficient used by generalized advantage estimation
-                alg_name='TRPO'
-                    ent_coeff(default=0.0), coefficient for the entropy penalty
-                    max_kl(default=.001), maximum kl allowed for every policy update
-                    lam(default=1.), lambda coefficient used by generalized advantage estimation
-                    n_epochs_line_search(default=10), maximum number of iterations of the line search algorithm
-                    n_epochs_cg(default=10), maximum number of iterations of the conjugate gradient algorithm
-                    cg_damping(default=1e-2), damping factor for the conjugate gradient algorithm
-                    cg_residual_tol(default=1e-10), conjugate gradient residual tolerance
                 alg_name in ['DDPG', 'TD3]
                     batch_size, the number of samples in a batch
                     initial_replay_size, the number of samples to collect before starting the learning
@@ -126,14 +119,22 @@ class DQN_Learn:
                     alg_name='TD3'
                         noise_std(default=.2), standard deviation of the noise used for policy smoothing
                         noise_clip(default=.5), maximum absolute value for policy smoothing noise
-            alg_name='SAC'
-                batch_size, the number of samples in a batch
-                initial_replay_size, the number of samples to collect before starting the learning
-                max_replay_size, the maximum number of samples in the replay memory
-                warmup_transitions, number of samples to accumulate in the replay memory to start the policy fitting
-                tau, value of coefficient for soft updates
-                lr_alpha, Learning rate for the entropy coefficient
-                target_entropy(default=None),target entropy for the policy; if None a default value is computed
+                alg_name='SAC'
+                    batch_size, the number of samples in a batch
+                    initial_replay_size, the number of samples to collect before starting the learning
+                    max_replay_size, the maximum number of samples in the replay memory
+                    warmup_transitions, number of samples to accumulate in the replay memory to start the policy fitting
+                    tau, value of coefficient for soft updates
+                    lr_alpha, Learning rate for the entropy coefficient
+                    target_entropy(default=None),target entropy for the policy; if None a default value is computed
+            alg_name='TRPO'
+                ent_coeff(default=0.0), coefficient for the entropy penalty
+                max_kl(default=.001), maximum kl allowed for every policy update
+                lam(default=1.), lambda coefficient used by generalized advantage estimation
+                n_epochs_line_search(default=10), maximum number of iterations of the line search algorithm
+                n_epochs_cg(default=10), maximum number of iterations of the conjugate gradient algorithm
+                cg_damping(default=1e-2), damping factor for the conjugate gradient algorithm
+                cg_residual_tol(default=1e-10), conjugate gradient residual tolerance
         """
 
         ## MDP
@@ -144,8 +145,12 @@ class DQN_Learn:
         ## Parameters of Agent(agent_params) and of Network_for_Reco(alg_params)
         self.agent_params = alg_params.copy()
 
-        self.alg_params = {'hidden_dims': alg_params['hidden_dims']}
-        del self.agent_params['hidden_dims']
+        self.alg_params = {}
+        for key in ['hidden_dims', 'optimizer', 'loss']:
+            self.alg_params[key] = alg_params[key]
+            if key == 'optimizer' and pi_name in ['A2C', 'PPO', 'DDPG', 'TD3', 'SAC']:
+                self.agent_params['actor_optimizer'] = alg_params[key]
+            del self.agent_params[key]
         self.alg_params['network'] = Network_for_Reco
         self.alg_params['input_shape'] = self.env.info.observation_space.shape
         if len(self.env.items.shape) == 1:
@@ -158,6 +163,7 @@ class DQN_Learn:
                 self.alg_params['mode'] = 'actor'
 
                 self.crt_alg_params = self.alg_params.copy()
+                del self.alg_params['optimizer']
                 self.crt_alg_params['mode'] = 'critic'
                 self.crt_alg_params['input_shape'] = (self.env.action_dim[0] + self.env.info.action_space.shape[0],)
                 self.crt_alg_params['output_shape'] = (1,)
@@ -177,6 +183,7 @@ class DQN_Learn:
                 self.pi_pr_name = PI_PR_NAMES[pi_pr_name]
                 self.policy = self.pi_name(self.pi_pr_name(**pi_pr_params.copy()))
 
+
         self.agent_params['mdp_info'] = self.env.info
         if alg_name in ['DDPG', 'TD3']:
             self.agent_params['policy_class'] = self.pi_name
@@ -188,7 +195,9 @@ class DQN_Learn:
             self.agent_params['actor_mu_params'] = self.alg_params.copy()
             self.agent_params['actor_sigma_params'] = self.alg_params.copy()
         else:
-            self.agent_params['policy'] = self.policy
+            if alg_name != 'TRPO':
+                self.agent_params['policy'] = self.policy
+            
             if alg_name in ['DQN', 'DDQN', 'ADQN']:
                 self.agent_params['approximator'] = TorchApproximator#_cuda
                 self.agent_params['approximator_params'] = self.alg_params
