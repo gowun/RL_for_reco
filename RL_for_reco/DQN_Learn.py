@@ -126,14 +126,14 @@ class DQN_Learn:
                     alg_name='TD3'
                         noise_std(default=.2), standard deviation of the noise used for policy smoothing
                         noise_clip(default=.5), maximum absolute value for policy smoothing noise
-                alg_name='SAC'
-                    batch_size, the number of samples in a batch
-                    initial_replay_size, the number of samples to collect before starting the learning
-                    max_replay_size, the maximum number of samples in the replay memory
-                    warmup_transitions, number of samples to accumulate in the replay memory to start the policy fitting
-                    tau, value of coefficient for soft updates
-                    lr_alpha, Learning rate for the entropy coefficient
-                    target_entropy(default=None),target entropy for the policy; if None a default value is computed
+            alg_name='SAC'
+                batch_size, the number of samples in a batch
+                initial_replay_size, the number of samples to collect before starting the learning
+                max_replay_size, the maximum number of samples in the replay memory
+                warmup_transitions, number of samples to accumulate in the replay memory to start the policy fitting
+                tau, value of coefficient for soft updates
+                lr_alpha, Learning rate for the entropy coefficient
+                target_entropy(default=None),target entropy for the policy; if None a default value is computed
         """
 
         ## MDP
