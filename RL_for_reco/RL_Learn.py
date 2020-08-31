@@ -45,8 +45,8 @@ class RL_Learn:
                                        'OUNoise': OrnsteinUhlenbeckPolicy}  ## add noise
         
         env_params: 
-            items, list of item labels or integers representing items for value-based learning; 
-                   list of a pair of min and max value over all items(actually all the pair are the same, in this version)
+            items, array of item labels or integers representing items for value-based learning; 
+                   array of a pair of min and max value over all items(actually all the pair are the same, in this version)
             gamma, learning rate
             horizon, length for agent to long in the environment
             trans_model_abs_path, absolute directory path where a transition model from (state, action) to (state, reward) is
@@ -140,7 +140,7 @@ class RL_Learn:
         ## MDP
         self.env_name = ENV_NAMES[env_name]
         self.env = self.env_name(**env_params)
-
+        
 
         ## Parameters of Agent(agent_params) and of Network_for_Reco(alg_params)
         self.agent_params = alg_params.copy()
@@ -148,8 +148,8 @@ class RL_Learn:
         self.alg_params = {}
         for key in ['hidden_dims', 'optimizer', 'loss']:
             self.alg_params[key] = alg_params[key]
-            if key == 'optimizer' and pi_name in ['A2C', 'PPO', 'DDPG', 'TD3', 'SAC']:
-                self.agent_params['actor_optimizer'] = alg_params[key]
+            if key == 'optimizer' and alg_name in ['A2C', 'PPO', 'DDPG', 'TD3', 'SAC']:
+                self.agent_params.update({'actor_optimizer': alg_params[key]})
             del self.agent_params[key]
         self.alg_params['network'] = Network_for_Reco
         self.alg_params['input_shape'] = self.env.info.observation_space.shape
@@ -158,19 +158,18 @@ class RL_Learn:
             self.alg_params['n_actions'] = self.alg_params['output_shape'][0]
             self.alg_params['mode'] = 'q'
         else:
-            self.alg_params['output_shape'] = (self.env.action_dim[0], )
+            self.alg_params['output_shape'] = (self.env.action_dim,)
             if alg_name in ['DDPG', 'TD3', 'SAC']:
                 self.alg_params['mode'] = 'actor'
 
                 self.crt_alg_params = self.alg_params.copy()
                 del self.alg_params['optimizer']
                 self.crt_alg_params['mode'] = 'critic'
-                self.crt_alg_params['input_shape'] = (self.env.action_dim[0] + self.env.info.action_space.shape[0],)
+                self.crt_alg_params['input_shape'] = (self.env.state_dim + self.env.action_dim,)
                 self.crt_alg_params['output_shape'] = (1,)
             else:
                 self.alg_params['mode'] = 'critic'
-        print(self.alg_params)
-        print(self.agent_params)
+                self.alg_params['output_shape'] = (1,)
 
         # Policy 
         if pi_name is not None:
@@ -178,10 +177,14 @@ class RL_Learn:
             if pi_name == 'OUNoise' and pi_pr_params is not None:
                 self.pi_pr_params = pi_pr_params
             elif pi_name.endswith('Torch'):
-                self.pi_pr_params = self.alg_params.copy().update(pi_pr_params)
-                del self.pi_pr_params['optimizer']
-                del self.pi_pr_params['loss']
-                print(self.pi_pr_params)
+                self.pi_pr_params = {
+                    'use_cuda': False,
+                    'network': Network_for_Reco,
+                    'input_shape': self.env.info.observation_space.shape,
+                    'output_shape': (self.env.action_dim,),
+                    'hidden_dims': self.alg_params['hidden_dims']
+                }
+                self.pi_pr_params.update(pi_pr_params)
                 self.policy = self.pi_name(**self.pi_pr_params)
             elif pi_pr_name is not None:
                 self.pi_pr_name = PI_PR_NAMES[pi_pr_name]
@@ -213,8 +216,10 @@ class RL_Learn:
         self.agent = self.alg_name(**self.agent_params)
         self.core = Core(self.agent, self.env)
 
-    def train(self, n_epochs, n_steps, train_frequency):
-        for _ in range(n_epochs):
+    def train(self, n_epochs, n_steps, train_frequency, print_epoch=True):
+        for i in range(n_epochs):
+            if print_epoch:
+                print(f'---------- {i}th epoch -----------')
             self.core.learn(n_steps=n_steps, n_steps_per_fit=train_frequency)
 
     def compare_model_with_origin(self, initial_states, compared_rewards, n_samples=10000):

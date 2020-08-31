@@ -33,29 +33,26 @@ class Network_for_Reco(nn.Module):
         nn.init.xavier_uniform_(self.last_layer.weight, gain=nn.init.calculate_gain('linear'))
 
     def forward(self, state, action=None):
-        if self.mode in ['q', 'actor']:
-            features = torch.tensor(state).float()
-            for hh in self.fully_connected_net:
-                features = F.relu(hh(torch.squeeze(torch.tensor(features).float(), 1).float()))
-            q = self.last_layer(torch.tensor(features).float())
-
-            if self.mode == 'q':
-                if action is None:
-                    return q
-                else:
-                    action = action.long()
-                    q_acted = torch.squeeze(q.gather(1, action))
-
-                    return q_acted
-            elif self.mode == 'actor':
-                return q
-        elif self.mode == 'critic' and action is not None:
+        if self.mode == 'critic' and action is not None:
             state_action = torch.cat((state.float(), action.float()), dim=1)
             for hh in self.fully_connected_net:
                 state_action = F.relu(hh(state_action))
             q = self.last_layer(state_action)
 
             return torch.squeeze(q)
+        else:
+            features = torch.squeeze(state.float(), 1).float()
+            for hh in self.fully_connected_net:
+                features = F.relu(hh(features))
+            q = self.last_layer(features)
+
+            if action is None:
+                return q
+            else:
+                action = action.long()
+                q_acted = torch.squeeze(q.gather(1, action))
+
+                return q_acted
 
 
 

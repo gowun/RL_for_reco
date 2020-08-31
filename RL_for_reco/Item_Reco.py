@@ -16,11 +16,8 @@ class Item_Reco(Environment):
 
         # 1) discrete actions: list of item names or representing integers
         # 2) actions on n-dimensional space: list of a pair of min and max values per action
-        self.items = np.array(items)
-        if len(self.items.shape) == 1:
-            self.action_dim = len(self.items)
-        else:
-            self.action_dim = self.items.shape
+        self.items = items
+        self.action_dim = len(self.items)
         if item_dist is None:
             if len(self.items.shape) == 1:
                 if 'none' in self.items:
@@ -38,12 +35,9 @@ class Item_Reco(Environment):
         self.trans_model_params = self.trans_model.model.state_dict()
         tmp = list(self.trans_model_params.keys())
         key = list(filter(lambda x: '0.weight' in x, tmp))[0]
-        if len(self.items.shape) == 1:
-            self.state_dim = self.trans_model_params[key].shape[1] - self.action_dim
-            if 'none' in self.items:
-                self.state_dim += 1
-        else:
-            self.state_dim = self.trans_model_params[key].shape[1] - self.action_dim[0]
+        self.state_dim = self.trans_model_params[key].shape[1] - self.action_dim
+        if 'none' in self.items:
+            self.state_dim += 1
 
         MM_VAL = 100
         self.min_point = np.ones(self.state_dim) * -MM_VAL
@@ -72,7 +66,9 @@ class Item_Reco(Environment):
         return self._state
 
     def step(self, action):
-        if len(self.items.shape) == 1:
+        if self._discrete_actions is None:
+            next_state, reward = self.trans_model.infer(np.concatenate([self._state, action]))
+        else:
             if 'none' in self.items:
                 action_onehot = np.zeros(self.action_dim-1)
                 if action > 0:
@@ -81,8 +77,6 @@ class Item_Reco(Environment):
                 action_onehot = np.zeros(self.action_dim)
                 action_onehot[action] = 1.0
             next_state, reward = self.trans_model.infer(np.concatenate([self._state, action_onehot]))
-        else:
-            next_state, reward = self.trans_model.infer(np.concatenate([self._state, action]))
         
         return next_state, reward, False, {}
 
