@@ -31,7 +31,7 @@ ENV_NAMES = {'IR': Item_Reco}
 '''
 
 
-class DQN_Learn:
+class RL_Learn:
     def __init__(self, env_name, alg_name, pi_pr_name=None, pi_name=None, env_params={}, pi_pr_params={}, alg_params={}):
         """
         Constructor
