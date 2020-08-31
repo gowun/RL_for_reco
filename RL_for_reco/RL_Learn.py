@@ -169,7 +169,8 @@ class RL_Learn:
                 self.crt_alg_params['output_shape'] = (1,)
             else:
                 self.alg_params['mode'] = 'critic'
-
+        print(self.alg_params)
+        print(self.agent_params)
 
         # Policy 
         if pi_name is not None:
