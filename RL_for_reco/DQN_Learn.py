@@ -7,7 +7,7 @@ from mushroom_rl.algorithms.value import DQN, DoubleDQN, AveragedDQN
 from mushroom_rl.algorithms.actor_critic import A2C, DDPG, TD3, SAC, TRPO, PPO
 from mushroom_rl.core import Core
 from mushroom_rl.environments import *
-from mushroom_rl.policy import EpsGreedy, Boltzmann, GaussianTorchPolicy, BoltzmannTorchPolicy, OrnsteinUhlenbeckPolicy
+from mushroom_rl.policy import EpsGreedy, Boltzmann, GaussianTorchPolicy, OrnsteinUhlenbeckPolicy
 from mushroom_rl.approximators.parametric.torch_approximator import TorchApproximator
 from mushroom_rl.utils.dataset import compute_J
 from mushroom_rl.utils.parameters import Parameter, LinearParameter, ExponentialParameter
@@ -19,7 +19,7 @@ ALG_NAMES = {'DQN': DQN, 'DDQN': DoubleDQN, 'ADQN': AveragedDQN,   ## value-base
              'A2C': A2C, 'DDPG': DDPG, 'TD3': TD3, 'SAC': SAC, 'TRPO': TRPO, 'PPO': PPO}   ## policy-based
 PI_PR_NAMES = {'Static': Parameter, 'Linear': LinearParameter, 'Exp': ExponentialParameter}  ## only for value-based
 PI_NAMES = {'EG': EpsGreedy, 'BTM': Boltzmann, 
-            'GSTorch': GaussianTorchPolicy, 'BTMTorch': BoltzmannTorchPolicy, 'OUNoise': OrnsteinUhlenbeckPolicy}
+            'GSTorch': GaussianTorchPolicy, 'OUNoise': OrnsteinUhlenbeckPolicy}
 ENV_NAMES = {'IR': Item_Reco}
 
 '''
@@ -41,7 +41,7 @@ class DQN_Learn:
                           'A2C': A2C, 'DDPG': DDPG, 'TD3': TD3, 'SAC': SAC, 'TRPO': TRPO, 'PPO': PPO}   ## policy-based
         pi_pr_name(default=None): one of {'Static': Parameter, 'Linear': LinearParameter, 'Exp': ExponentialParameter}
         pi_name(default=None): one of {'EG': EpsGreedy, 'BTM': Boltzmann, ## value-based
-                                       'GSTorch': GaussianTorchPolicy, 'BTMTorch': BoltzmannTorchPolicy, ## policy-based
+                                       'GSTorch': GaussianTorchPolicy, ## policy-based
                                        'OUNoise': OrnsteinUhlenbeckPolicy}  ## add noise
         
         env_params: 
@@ -70,7 +70,7 @@ class DQN_Learn:
 
             pi_name='EG'
                 epsilon, one of 'Static', 'Linear' and 'Exp', the exploration coefficient
-            pi_name in ['BTM', 'BTMTorch']
+            pi_name='BTM'
                 beta, one of 'Static', 'Linear' and 'Exp', the inverse of the temperature distribution; 
                       As the temperature approaches 0.0, the policy becomes more and more greedy
             pi_name='GSTorch'
