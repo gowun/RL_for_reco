@@ -178,6 +178,9 @@ class RL_Learn:
                 self.pi_pr_params = pi_pr_params
             elif pi_name.endswith('Torch'):
                 self.pi_pr_params = self.alg_params.copy().update(pi_pr_params)
+                del self.pi_pr_params['optimizer']
+                del self.pi_pr_params['loss']
+                print(self.pi_pr_params)
                 self.policy = self.pi_name(**self.pi_pr_params)
             elif pi_pr_name is not None:
                 self.pi_pr_name = PI_PR_NAMES[pi_pr_name]
